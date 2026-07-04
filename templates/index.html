@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JananiSetu — Mother & Child Care Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B2A4A; --ink-soft:#3A4A6B; --cream:#FBF6EF; --cream-deep:#F2E9DA;
+    --blush:#F6E1D8; --marigold:#E8A33D; --marigold-deep:#C97F1E; --sage:#5C8566;
+    --sage-bg:#E3EEE2; --amber:#D69A22; --amber-bg:#FBEDD3; --alert:#BD4433;
+    --alert-bg:#F9DFD8; --line:#E4D8C6; --white:#FFFFFF;
+    --shadow: 0 8px 24px rgba(27,42,74,0.08); --radius: 18px;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  body{ background:var(--cream); color:var(--ink); font-family:'Public Sans', sans-serif; min-height:100vh; }
+  ::selection{ background:var(--marigold); color:var(--ink); }
+  h1,h2,h3,.display{ font-family:'Fraunces', serif; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  a{ color:inherit; } button{ font-family:inherit; cursor:pointer; }
+  .app{ max-width:1180px; margin:0 auto; padding:28px 24px 80px; }
+
+  /* ===== HEADER ===== */
+  .topbar{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:30px; flex-wrap:wrap; }
+  .brand{ display:flex; align-items:center; gap:14px; }
+  .brand-mark{ width:52px; height:52px; border-radius:16px; background:var(--white); display:flex; align-items:center; justify-content:center; box-shadow: var(--shadow); flex-shrink:0; overflow: hidden; }
+  .brand-word{ font-size:26px; font-weight:600; letter-spacing:-0.01em; line-height:1; }
+  .brand-tag{ font-size:13px; color:var(--ink-soft); margin-top:4px; }
+  .lang-toggle{ display:flex; background:var(--white); border:1.5px solid var(--line); border-radius:999px; padding:4px; box-shadow: var(--shadow); }
+  .lang-toggle button{ border:none; background:transparent; padding:8px 16px; border-radius:999px; font-weight:700; font-size:14px; color:var(--ink-soft); transition:all .2s ease; }
+  .lang-toggle button.active{ background:var(--ink); color:var(--white); }
+
+  /* ===== ONBOARDING BANNER ===== */
+  .welcome{ background:linear-gradient(120deg, var(--ink) 0%, #29406B 100%); color:var(--cream); border-radius:22px; padding:26px 28px; margin-bottom:28px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; position:relative; overflow:hidden; }
+  .welcome::after{ content:""; position:absolute; right:-40px; top:-60px; width:220px; height:220px; border-radius:50%; background:radial-gradient(circle, rgba(232,163,61,0.35), transparent 70%); }
+  .welcome-text{ max-width:600px; position:relative; z-index:1; }
+  .welcome-text h1{ font-size:24px; margin:0 0 8px; font-weight:600; }
+  .welcome-text p{ margin:0; font-size:14.5px; color:#D9E1F0; line-height:1.55; }
+  .welcome-cta{ background:var(--marigold); color:var(--ink); border:none; padding:14px 22px; border-radius:14px; font-weight:800; font-size:14.5px; display:flex; align-items:center; gap:8px; white-space:nowrap; position:relative; z-index:1; box-shadow:0 6px 16px rgba(0,0,0,0.25); transition:transform .15s ease; }
+  .welcome-cta:hover{ transform:translateY(-2px); }
+  .welcome.dismissed{ display:none; }
+
+  /* ===== JOURNEY NAV ===== */
+  .journey{ position:relative; display:flex; align-items:flex-start; justify-content:space-between; margin:0 0 34px; padding:0 6px; max-width: 600px; margin-left: auto; margin-right: auto; }
+  .journey-line{ position:absolute; top:34px; left:60px; right:60px; height:3px; background: repeating-linear-gradient(90deg, var(--line) 0 10px, transparent 10px 18px); z-index:0; }
+  .station{ position:relative; z-index:1; flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding:0 8px; background:transparent; border:none; }
+  .station-dot{ width:68px; height:68px; border-radius:50%; background:var(--white); border:3px solid var(--line); display:flex; align-items:center; justify-content:center; transition:all .25s ease; box-shadow: var(--shadow); }
+  .station-dot svg{ width:30px; height:30px; stroke:var(--ink-soft); transition: all .25s ease; }
+  .station-label{ font-weight:700; font-size:14.5px; color:var(--ink-soft); }
+  .station-sub{ font-size:12px; color:#8A93A8; max-width:150px; }
+  .station.active .station-dot{ border-color:var(--marigold); background:var(--marigold); box-shadow:0 0 0 6px rgba(232,163,61,0.22), var(--shadow); }
+  .station.active .station-dot svg{ stroke:var(--white); }
+  .station.active .station-label{ color:var(--ink); }
+  .station:not(.active):hover .station-dot{ border-color:var(--marigold-deep); }
+  .station-num{ position:absolute; top:-4px; right:calc(50% - 44px); width:22px; height:22px; border-radius:50%; background:var(--ink); color:var(--white); font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; }
+
+  /* ===== PANELS ===== */
+  .panel{ display:none; animation: fadeUp .35s ease; }
+  .panel.active{ display:block; }
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+  .panel-head{ margin-bottom:22px; }
+  .eyebrow{ display:inline-flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--marigold-deep); background:var(--blush); padding:6px 12px; border-radius:999px; margin-bottom:10px; }
+  .panel-head h2{ font-size:26px; margin:0 0 6px; }
+  .panel-head p{ margin:0; color:var(--ink-soft); font-size:15px; max-width:640px; line-height:1.5; }
+
+  .grid{ display:grid; grid-template-columns: 1fr; gap:22px; }
+  .card{ background:var(--white); border-radius:var(--radius); padding:24px; box-shadow:var(--shadow); border:1px solid var(--line); }
+  .field{ margin-bottom:18px; }
+  .field label{ display:flex; align-items:center; gap:6px; font-size:13.5px; font-weight:700; color:var(--ink-soft); margin-bottom:7px; }
+  input[type=text], input[type=number], input[type=file], select, textarea{ width:100%; padding:13px 14px; border-radius:12px; border:1.5px solid var(--line); font-size:15.5px; font-family:'IBM Plex Mono', monospace; font-weight:500; background:var(--cream); color:var(--ink); }
+  input:focus{ outline:none; border-color:var(--marigold); background:var(--white); }
+  .btn-primary{ width:100%; padding:15px; border:none; border-radius:14px; background:var(--ink); color:var(--white); font-weight:800; font-size:15px; display:flex; align-items:center; justify-content:center; gap:8px; transition:background .15s ease; cursor: pointer; }
+  .btn-primary:hover{ background:#2A3E66; }
+  
+  .lookup{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px; }
+  .lookup button{ flex:1; padding:13px 22px; border:1px solid var(--line); border-radius:12px; background:var(--white); color:var(--ink); font-weight:800; font-size:14.5px; }
+  .lookup button.active{ background:var(--marigold); border-color:var(--marigold); }
+  
+  .missing-table{ width:100%; border-collapse: collapse; margin-top: 15px; border-radius: 8px; overflow: hidden; }
+  .missing-table th{ background:var(--blush); padding: 12px; text-align: left; font-size: 13px; font-weight: 700; }
+  .missing-table td{ padding: 12px; border-bottom: 1px solid var(--line); font-size: 13.5px; color: var(--ink-soft); }
+  
+  .chart-wrap{ margin-top:20px; padding-top: 20px; border-top: 1px solid var(--line); }
+  
+  /* GRID FOR 3 GRAPHS */
+  .graph-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-top: 15px; }
+  .graph-grid img { width: 100%; border-radius: 12px; border: 1px solid var(--line); background: white; padding: 10px; }
+
+  footer{ text-align:center; margin-top:50px; color:#A6ADBC; font-size:12.5px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <img src="/static/logo.png" alt="JananiSetu Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+      </div>
+      <div>
+        <div class="brand-word">JananiSetu</div>
+        <div class="brand-tag" data-translate="tagline">A Bridge between Hope to Life</div>
+      </div>
+    </div>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button class="active" onclick="toggleLang('en', this)">English</button>
+      <button onclick="toggleLang('hi', this)">हिंदी</button>
+    </div>
+  </div>
+
+  <div class="welcome" id="welcomeBanner">
+    <div class="welcome-text">
+      <h1 data-translate="welcome_title">New here? Let's take a 20-second look around.</h1>
+      <p data-translate="welcome_desc">Two stops, one journey: enter check-up numbers to log data securely, and hand doctors a ready-made briefing with full AI insights and trend graphs the moment a mother reaches the hospital.</p>
+    </div>
+    <button class="welcome-cta" onclick="dismissWelcome()">
+      <span data-translate="welcome_btn">Got it, let's start</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+
+  <nav class="journey">
+    <div class="journey-line"></div>
+    <button class="station active" data-panel="p1" onclick="goTo('p1')">
+      <span class="station-num">1</span>
+      <div class="station-dot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      </div>
+      <div class="station-label" data-translate="nav_village">Village Check-In</div>
+      <div class="station-sub" data-translate="nav_village_sub">Enter today's vitals</div>
+    </button>
+    
+    <button class="station" data-panel="p2" onclick="goTo('p2')">
+      <span class="station-num">2</span>
+      <div class="station-dot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6l-8-4z"/><path d="M12 8v5M12 16h.01"/></svg>
+      </div>
+      <div class="station-label" data-translate="nav_delivery">Delivery Room</div>
+      <div class="station-sub" data-translate="nav_delivery_sub">Emergency Retrieval Gateway</div>
+    </button>
+  </nav>
+
+  <section class="panel active" id="p1">
+    <div class="panel-head">
+      <div class="eyebrow" data-translate="p1_eyebrow">Agent 2 · Smart Ingestion</div>
+      <h2 data-translate="p1_title">Upload report or enter data manually.</h2>
+      <p data-translate="p1_desc">Upload a photo of the medical report, and we will extract the data. Anything missing? You can fill the gaps below.</p>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="lookup" id="entryToggleGroup">
+          <button class="active" onclick="setEntryMode('ocr', this)" data-translate="btn_ocr">Upload ID/Report (OCR)</button>
+          <button onclick="setEntryMode('manual', this)" data-translate="btn_manual">Enter Manually</button>
+        </div>
+        
+        <div id="uploadZone" class="field" style="border: 2px dashed var(--line); padding: 40px 20px; text-align: center; border-radius: var(--radius); background: var(--cream);">
+          <svg width="40" height="40" fill="none" stroke="var(--ink-soft)" viewBox="0 0 24 24" style="margin-bottom:10px;"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <p style="margin:0 0 15px; font-weight:600; color:var(--ink-soft);" data-translate="upload_hint">Take a picture of the ID or browse for an image.</p>
+          <input type="file" id="ocrInput" accept="image/png, image/jpeg, image/jpg" capture="environment" onchange="handleImageSelect(this)" style="background:var(--white); cursor:pointer;">
+          <button id="processBtn" class="btn-primary" style="display:none; margin-top: 20px; width: 60%; margin-left: auto; margin-right: auto;" onclick="processOCR()" data-translate="btn_process">Process Document</button>
+        </div>
+
+        <div id="manualEntryZone" style="display:none;">
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+            <div class="field"><label>Patient_ID</label><input type="text" id="man_id" placeholder="e.g. MOM-2291"></div>
+            <div class="field"><label>Patient Name</label><input type="text" id="man_name" placeholder="e.g. Radha Devi"></div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+            <div class="field"><label>Husband's Name</label><input type="text" id="man_husband" placeholder="e.g. Shyam"></div>
+            <div class="field"><label>Village / Location</label><input type="text" id="man_village" placeholder="e.g. Surat"></div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+            <div class="field"><label>Visit_Week</label><input type="number" id="man_week" placeholder="e.g. 24" min="1" max="42"></div>
+            <div class="field"><label>LMP (Date)</label><input type="text" id="man_lmp" placeholder="dd/mm/yyyy"></div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+            <div class="field"><label>EDD (Date)</label><input type="text" id="man_edd" placeholder="dd/mm/yyyy"></div>
+            <div class="field"><label>Obstetric_History</label><input type="text" id="man_obs" placeholder="e.g. G3 P1 A1 L1"></div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+            <div class="field"><label>Blood_Pressure (mmHg)</label><input type="text" id="man_bp" placeholder="e.g. 120/80"></div>
+            <div class="field"><label>Hemoglobin_Hb (g/dL)</label><input type="number" id="man_hb" step="0.1" placeholder="e.g. 11.2"></div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+            <div class="field"><label>Blood_Sugar (mg/dL)</label><input type="text" id="man_sugar" placeholder="e.g. 90"></div>
+            <div class="field">
+              <label>Seizure_History</label>
+              <select id="man_seizure">
+                <option value="none">No History</option>
+                <option value="past">Yes - Past History</option>
+                <option value="active">Yes - Active Risk</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+            <div class="field">
+              <label>HHH Status (Hep B, Hep C, HIV)</label>
+              <select id="man_hhh">
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Comorbidities_&_Remarks</label>
+              <textarea id="man_notes" rows="1" placeholder="Additional notes..."></textarea>
+            </div>
+          </div>
+
+          <button class="btn-primary" onclick="savePatientData()" data-translate="btn_save">Save Data</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="p2">
+    <div class="panel-head">
+      <div class="eyebrow" data-translate="p2_eyebrow">Agent 4 · Emergency Searcher</div>
+      <h2 data-translate="p2_title">Emergency Retrieval Gateway</h2>
+      <p data-translate="p2_desc">Select an option below to securely pull the patient's medical history when they arrive at the delivery room.</p>
+    </div>
+    
+    <div class="card">
+      <div class="lookup" id="identityToggleGroup">
+        <button class="active" onclick="showIdentityMethod('scan', this)" data-translate="tab_scan">📷 Scan Card</button>
+        <button onclick="showIdentityMethod('manual', this)" data-translate="tab_manual">🔢 Manual ID</button>
+        <button onclick="showIdentityMethod('demo', this)" data-translate="tab_demo">🔍 Demographic Search</button>
+      </div>
+      
+      <div id="identityForm" style="margin-top:20px; padding: 20px; background: var(--cream); border-radius: 12px; border: 1px solid var(--line);">
+        <div id="scannerZone" style="text-align:center;">
+          <svg width="40" height="40" fill="none" stroke="var(--ink-soft)" viewBox="0 0 24 24" style="margin-bottom:10px; display:block; margin: 0 auto 10px;"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <p style="margin: 0 0 15px; font-weight:600;" data-translate="scan_hint">Point camera to scan the physical Card.</p>
+          <button class="btn-primary" style="width: auto; margin: 0 auto; padding: 10px 24px;" onclick="alert('Camera module requires HTTPS to initialize.')" data-translate="btn_open_scan">Open Camera Scanner</button>
+        </div>
+
+        <div id="manualSearchZone" style="display:none; text-align:center;">
+          <p style="margin: 0 0 15px; font-weight:600;" data-translate="man_hint">Enter the Patient ID manually.</p>
+          <input type="text" id="search_id" placeholder="Enter Patient ID (e.g. MOM-2291)" style="margin-bottom: 15px;">
+          <button class="btn-primary" style="width: auto; margin: 0 auto; padding: 10px 24px;" onclick="simulateSearch()" data-translate="btn_search">Search Database</button>
+        </div>
+
+        <div id="demoSearchZone" style="display:none; text-align:center;">
+          <p style="margin: 0 0 15px; font-weight:600;" data-translate="demo_hint">Search by Patient Name and Village.</p>
+          <input type="text" placeholder="Patient Name" style="margin-bottom: 10px;">
+          <input type="text" placeholder="Village / Location" style="margin-bottom: 15px;">
+          <button class="btn-primary" style="width: auto; margin: 0 auto; padding: 10px 24px;" onclick="alert('Demographic matching requires full database indexing.')" data-translate="btn_search_rec">Search Records</button>
+        </div>
+      </div>
+
+      <div id="briefingBox" style="display:none; margin-top:30px; border-top: 2px dashed var(--line); padding-top: 20px;">
+        <h3 id="patient_title">Executive Labor Briefing</h3>
+        
+        <h4 style="margin-bottom: 10px; margin-top: 25px;" data-translate="insight_head">Agent 3 · AI Clinical Insights</h4>
+        <div id="ai_insight_content" style="padding: 15px; background: var(--blush); border-radius: 12px; white-space: pre-wrap; font-size: 14.5px; line-height: 1.5; color: var(--ink);">Loading...</div>
+        
+        <button class="btn-primary" onclick="translateToHindi()" style="margin-top: 15px; width: auto; padding: 10px 24px; font-size: 14px;" data-translate="btn_trans_ai">Translate Insight to Hindi</button>
+        <div id="hindi-result" style="display: none; margin-top: 15px; padding: 15px; background: var(--amber-bg); border-radius: 12px; white-space: pre-wrap; font-size: 14.5px; line-height: 1.5; color: var(--ink);"></div>
+
+        <div class="chart-wrap" id="chart-wrap" style="display: none;">
+          <h4 style="margin-bottom: 10px;" data-translate="chart_title">42-Week Vitals Trend</h4>
+          
+          <div class="graph-grid">
+              <img id="graph_bp" src="" style="display:none;">
+              <img id="graph_hb" src="" style="display:none;">
+              <img id="graph_sugar" src="" style="display:none;">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer data-translate="footer">Built for ANMs and front-line health workers · JananiSetu Prototype</footer>
+</div>
+
+<script>
+  // ================= UI LOCALIZATION DICTIONARY =================
+  const translations = {
+    welcome_title: { en: "New here? Let's take a 20-second look around.", hi: "यहाँ नए हैं? आइए 20 सेकंड में चारों ओर देखें।" },
+    welcome_desc: { en: "Two stops, one journey: enter check-up numbers to log data securely, and hand doctors a ready-made briefing with full AI insights and trend graphs the moment a mother reaches the hospital.", hi: "डेटा सुरक्षित रूप से दर्ज करने के लिए चेक-अप नंबर दर्ज करें, और अस्पताल पहुंचते ही डॉक्टरों को AI अंतर्दृष्टि और ग्राफ़ के साथ तैयार ब्रीफिंग सौंपें।" },
+    welcome_btn: { en: "Got it, let's start", hi: "समझ गया, शुरू करें" },
+    nav_village: { en: "Village Check-In", hi: "गांव चेक-इन" },
+    nav_village_sub: { en: "Enter today's vitals", hi: "आज की विटल्स दर्ज करें" },
+    nav_delivery: { en: "Delivery Room", hi: "डिलीवरी रूम" },
+    nav_delivery_sub: { en: "Emergency Retrieval Gateway", hi: "आपातकालीन पुनर्प्राप्ति गेटवे" },
+    p1_eyebrow: { en: "Agent 2 · Smart Ingestion", hi: "एजेंट 2 · स्मार्ट इनजेशन" },
+    p1_title: { en: "Upload report or enter data manually.", hi: "रिपोर्ट अपलोड करें या मैन्युअल रूप से डेटा दर्ज करें।" },
+    p1_desc: { en: "Upload a photo of the medical report, and we will extract the data. Anything missing? You can fill the gaps below.", hi: "मेडिकल रिपोर्ट की एक तस्वीर अपलोड करें। कुछ छूट गया? आप नीचे भर सकते हैं।" },
+    btn_ocr: { en: "Upload ID/Report (OCR)", hi: "आईडी/रिपोर्ट अपलोड करें (OCR)" },
+    btn_manual: { en: "Enter Manually", hi: "मैन्युअल रूप से दर्ज करें" },
+    upload_hint: { en: "Take a picture of the ID or browse for an image.", hi: "आईडी की तस्वीर लें या किसी छवि के लिए ब्राउज़ करें।" },
+    btn_process: { en: "Process Document", hi: "दस्तावेज़ संसाधित करें" },
+    btn_save: { en: "Save Data", hi: "डेटा सहेजें" },
+    p2_eyebrow: { en: "Agent 4 · Emergency Searcher", hi: "एजेंट 4 · आपातकालीन खोजकर्ता" },
+    p2_title: { en: "Emergency Retrieval Gateway", hi: "आपातकालीन पुनर्प्राप्ति गेटवे" },
+    p2_desc: { en: "Select an option below to securely pull the patient's medical history when they arrive at the delivery room.", hi: "डिलीवरी रूम में आने पर रोगी का मेडिकल इतिहास सुरक्षित रूप से निकालने के लिए नीचे एक विकल्प चुनें।" },
+    tab_scan: { en: "📷 Scan Card", hi: "📷 कार्ड स्कैन करें" },
+    tab_manual: { en: "🔢 Manual ID", hi: "🔢 मैन्युअल आईडी" },
+    tab_demo: { en: "🔍 Demographic Search", hi: "🔍 जनसांख्यिकीय खोज" },
+    scan_hint: { en: "Point camera to scan the physical Card.", hi: "भौतिक कार्ड को स्कैन करने के लिए कैमरा पॉइंट करें।" },
+    btn_open_scan: { en: "Open Camera Scanner", hi: "कैमरा स्कैनर खोलें" },
+    man_hint: { en: "Enter the Patient ID manually.", hi: "रोगी की आईडी मैन्युअल रूप से दर्ज करें।" },
+    btn_search: { en: "Search Database", hi: "डेटाबेस खोजें" },
+    demo_hint: { en: "Search by Patient Name and Village.", hi: "रोगी के नाम और गांव से खोजें।" },
+    btn_search_rec: { en: "Search Records", hi: "रिकॉर्ड खोजें" },
+    insight_head: { en: "Agent 3 · AI Clinical Insights", hi: "एजेंट 3 · AI क्लिनिकल अंतर्दृष्टि" },
+    btn_trans_ai: { en: "Translate Insight to Hindi", hi: "अंतर्दृष्टि का हिंदी में अनुवाद करें" },
+    chart_title: { en: "42-Week Vitals Trend", hi: "42-सप्ताह का विटल्स ट्रेंड" },
+    footer: { en: "Built for ANMs and front-line health workers · JananiSetu Prototype", hi: "ANM और फ्रंट-लाइन स्वास्थ्य कार्यकर्ताओं के लिए निर्मित · जननीसेतु प्रोटोटाइप" }
+  };
+
+  function toggleLang(lang, btn) {
+    document.querySelectorAll('.lang-toggle button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    document.querySelectorAll('[data-translate]').forEach(el => {
+      const key = el.getAttribute('data-translate');
+      if(translations[key]) {
+        if(el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+          el.placeholder = translations[key][lang];
+        } else {
+          el.innerText = translations[key][lang];
+        }
+      }
+    });
+  }
+
+  // ================= UI NAVIGATION =================
+  function goTo(id){
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.querySelectorAll('.station').forEach((s, idx) => {
+      s.classList.toggle('active', (id === 'p1' && idx === 0) || (id === 'p2' && idx === 1));
+    });
+  }
+
+  function dismissWelcome(){
+    document.getElementById('welcomeBanner').classList.add('dismissed');
+  }
+
+  function setEntryMode(mode, clickedBtn) {
+    document.querySelectorAll('#entryToggleGroup button').forEach(b => b.classList.remove('active'));
+    clickedBtn.classList.add('active');
+    if (mode === 'ocr') {
+      document.getElementById('uploadZone').style.display = 'block';
+      document.getElementById('manualEntryZone').style.display = 'none';
+    } else {
+      document.getElementById('uploadZone').style.display = 'none';
+      document.getElementById('manualEntryZone').style.display = 'block';
+    }
+  }
+
+  function showIdentityMethod(type, btn) {
+    document.querySelectorAll('#identityToggleGroup button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('scannerZone').style.display = 'none';
+    document.getElementById('manualSearchZone').style.display = 'none';
+    document.getElementById('demoSearchZone').style.display = 'none';
+    
+    if (type === 'scan') document.getElementById('scannerZone').style.display = 'block';
+    if (type === 'manual') document.getElementById('manualSearchZone').style.display = 'block';
+    if (type === 'demo') document.getElementById('demoSearchZone').style.display = 'block';
+  }
+
+  // ================= DATA LOGIC =================
+  function handleImageSelect(input) {
+    if (input.files && input.files[0]) {
+      document.getElementById('processBtn').style.display = 'block';
+    }
+  }
+
+  function processOCR() {
+    const btn = document.getElementById('processBtn');
+    btn.innerText = "Analyzing Document...";
+    setTimeout(() => {
+      alert("OCR Complete! Switch to manual to verify details.");
+      btn.innerText = "Process Document";
+      setEntryMode('manual', document.querySelectorAll('#entryToggleGroup button')[1]);
+      document.getElementById('missingDataHelper').style.display = 'block';
+    }, 1200);
+  }
+
+  function savePatientData() {
+    // FIXED: Sending all 14 fields EXACTLY as the python backend expects
+    const payload = {
+        Patient_ID: document.getElementById('man_id').value,
+        Name: document.getElementById('man_name').value, 
+        Husband_Name: document.getElementById('man_husband').value,
+        Village: document.getElementById('man_village').value,
+        LMP: document.getElementById('man_lmp').value,
+        EDD: document.getElementById('man_edd').value,
+        Obstetric_History: document.getElementById('man_obs').value,
+        Visit_Week: document.getElementById('man_week').value,
+        Blood_Pressure: document.getElementById('man_bp').value,
+        Hemoglobin_Hb: document.getElementById('man_hb').value,
+        Blood_Sugar: document.getElementById('man_sugar').value,
+        Seizure_History: document.getElementById('man_seizure').value,
+        HHH_Status: document.getElementById('man_hhh').value,
+        Comorbidities_Remarks: document.getElementById('man_notes').value
+    };
+
+    if (!payload.Patient_ID || !payload.Visit_Week) {
+        alert("Patient ID and Visit Week are required!");
+        return;
+    }
+
+    fetch('http://127.0.0.1:5000/api/save', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(payload) 
+    })
+    .then(res => res.json())
+    .then(data => alert(data.message))
+    .catch(err => console.error("Save Error:", err));
+  }
+
+  // ================= SEARCH =================
+// ================= SEARCH =================
+function simulateSearch() {
+    const input = document.getElementById('search_id');
+    
+    if (!input || input.value.trim() === "") {
+        alert("Please enter a Patient ID in the search box.");
+        return;
+    }
+
+    // 1. Show the UI and set loading text
+    document.getElementById('briefingBox').style.display = 'block';
+    document.getElementById('ai_insight_content').innerText = "Agent 3 is analyzing database...";
+    
+    // Grab the graph container and hide it while loading
+    const chartWrap = document.querySelector('.chart-wrap');
+    if (chartWrap) chartWrap.style.display = 'none';
+
+    fetch(`http://127.0.0.1:5000/api/search?patient_id=${input.value}`)
+    .then(res => res.json())
+    .then(data => {
+
+        if (data.status === "error") {
+            alert(data.message);
+            document.getElementById('briefingBox').style.display = 'none';
+            return;
+        }
+
+        // 2. Put the AI Insight text into the UI
+        document.getElementById('patient_title').innerText = "Briefing for " + input.value;
+        document.getElementById('ai_insight_content').innerText = data.insight;
+
+        // 3. Inject and UNHIDE the 3 Separate Graphs
+        if (chartWrap) {
+            // THIS IS THE FIX: Unhide the invisible box!
+            chartWrap.style.display = 'block'; 
+
+            // Clean up any old graphs from a previous search
+            let oldGrid = document.getElementById('graph-grid');
+            if (oldGrid) oldGrid.remove();
+
+            // Create a neat container for the 3 graphs
+            let grid = document.createElement('div');
+            grid.id = 'graph-grid';
+            grid.style.display = 'grid';
+            grid.style.gap = '15px';
+            grid.style.marginTop = '15px';
+
+            // Helper to generate the images beautifully
+            function addGraph(base64Data) {
+                if (base64Data) {
+                    let img = document.createElement('img');
+                    img.src = "data:image/png;base64," + base64Data;
+                    img.style.width = "100%";
+                    img.style.maxWidth = "600px";
+                    img.style.borderRadius = "12px";
+                    img.style.border = "1px solid var(--line)";
+                    img.style.background = "white";
+                    img.style.padding = "10px";
+                    grid.appendChild(img);
+                }
+            }
+
+            // Draw BP, Hb, and Sugar graphs!
+            addGraph(data.graph_bp);
+            addGraph(data.graph_hb);
+            addGraph(data.graph_sugar);
+
+            chartWrap.appendChild(grid);
+        }
+    })
+    .catch(err => {
+        console.error("Search Error:", err);
+        document.getElementById('ai_insight_content').innerText = "Error connecting to backend.";
+    });
+}
+
+  function translateToHindi() {
+    const textToTranslate = document.getElementById('ai_insight_content').innerText;
+    const resultBox = document.getElementById('hindi-result');
+    
+    if (!textToTranslate || textToTranslate === "Analyzing...") return;
+    
+    resultBox.style.display = 'block';
+    resultBox.innerText = 'Translating...';
+
+    fetch('http://127.0.0.1:5000/api/translate', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ text: textToTranslate, target_lang: 'hi' }) 
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === 'success') {
+            resultBox.innerText = data.translated_text;
+        } else {
+            resultBox.innerText = "Translation failed.";
+        }
+    })
+    .catch(err => {
+        console.error("Translate Error:", err);
+        resultBox.innerText = "Translation connection error occurred.";
+    });
+  }
+</script>
+</body>
+</html>
