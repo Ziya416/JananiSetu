@@ -1,5 +1,6 @@
-service_account.json
 .env
+service_account.json
+maternal_health_registry.csv
+desktop.ini
 venv/
 __pycache__/
-*.csv
