@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JananiSetu — Mother & Child Care Companion</title>
+<title>JananiSetu — A Bridge between Hope to Life</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -22,7 +22,7 @@
   a{ color:inherit; } button{ font-family:inherit; cursor:pointer; }
   .app{ max-width:1180px; margin:0 auto; padding:28px 24px 80px; }
 
-  /* ===== HEADER ===== */
+  /* HEADER */
   .topbar{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:30px; flex-wrap:wrap; }
   .brand{ display:flex; align-items:center; gap:14px; }
   .brand-mark{ width:52px; height:52px; border-radius:16px; background:var(--white); display:flex; align-items:center; justify-content:center; box-shadow: var(--shadow); flex-shrink:0; overflow: hidden; }
@@ -32,7 +32,7 @@
   .lang-toggle button{ border:none; background:transparent; padding:8px 16px; border-radius:999px; font-weight:700; font-size:14px; color:var(--ink-soft); transition:all .2s ease; }
   .lang-toggle button.active{ background:var(--ink); color:var(--white); }
 
-  /* ===== ONBOARDING BANNER ===== */
+  /* ONBOARDING BANNER */
   .welcome{ background:linear-gradient(120deg, var(--ink) 0%, #29406B 100%); color:var(--cream); border-radius:22px; padding:26px 28px; margin-bottom:28px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; position:relative; overflow:hidden; }
   .welcome::after{ content:""; position:absolute; right:-40px; top:-60px; width:220px; height:220px; border-radius:50%; background:radial-gradient(circle, rgba(232,163,61,0.35), transparent 70%); }
   .welcome-text{ max-width:600px; position:relative; z-index:1; }
@@ -42,7 +42,7 @@
   .welcome-cta:hover{ transform:translateY(-2px); }
   .welcome.dismissed{ display:none; }
 
-  /* ===== JOURNEY NAV ===== */
+  /* JOURNEY NAV */
   .journey{ position:relative; display:flex; align-items:flex-start; justify-content:space-between; margin:0 0 34px; padding:0 6px; max-width: 600px; margin-left: auto; margin-right: auto; }
   .journey-line{ position:absolute; top:34px; left:60px; right:60px; height:3px; background: repeating-linear-gradient(90deg, var(--line) 0 10px, transparent 10px 18px); z-index:0; }
   .station{ position:relative; z-index:1; flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding:0 8px; background:transparent; border:none; }
@@ -56,7 +56,7 @@
   .station:not(.active):hover .station-dot{ border-color:var(--marigold-deep); }
   .station-num{ position:absolute; top:-4px; right:calc(50% - 44px); width:22px; height:22px; border-radius:50%; background:var(--ink); color:var(--white); font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; }
 
-  /* ===== PANELS ===== */
+  /* PANELS */
   .panel{ display:none; animation: fadeUp .35s ease; }
   .panel.active{ display:block; }
   @keyframes fadeUp{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
@@ -93,7 +93,6 @@
 </head>
 <body>
 <div class="app">
-
   <div class="topbar">
     <div class="brand">
       <div class="brand-mark">
@@ -260,10 +259,12 @@
         <h3 id="patient_title">Executive Labor Briefing</h3>
         
         <h4 style="margin-bottom: 10px; margin-top: 25px;" data-translate="insight_head">Agent 3 · AI Clinical Insights</h4>
-        <div id="ai_insight_content" style="padding: 15px; background: var(--blush); border-radius: 12px; white-space: pre-wrap; font-size: 14.5px; line-height: 1.5; color: var(--ink);">Loading...</div>
-        
-        <button class="btn-primary" onclick="translateToHindi()" style="margin-top: 15px; width: auto; padding: 10px 24px; font-size: 14px;" data-translate="btn_trans_ai">Translate Insight to Hindi</button>
-        <div id="hindi-result" style="display: none; margin-top: 15px; padding: 15px; background: var(--amber-bg); border-radius: 12px; white-space: pre-wrap; font-size: 14.5px; line-height: 1.5; color: var(--ink);"></div>
+        <div class="insight-container">
+            <div id="clinical-insight-text" style="padding: 15px; background: var(--blush); border-radius: 12px; white-space: pre-wrap; font-size: 14.5px; line-height: 1.5; color: var(--ink);">Awaiting AI Analysis...</div>
+            <button id="lang-toggle-btn" class="btn-primary" onclick="toggleLanguage()" style="display: none; margin-top: 15px; width: auto; padding: 10px 24px; font-size: 14px;">
+                Translate to Hindi
+            </button>
+        </div>
 
         <div class="chart-wrap" id="chart-wrap" style="display: none;">
           <h4 style="margin-bottom: 10px;" data-translate="chart_title">42-Week Vitals Trend</h4>
@@ -282,7 +283,26 @@
 </div>
 
 <script>
-  // ================= UI LOCALIZATION DICTIONARY =================
+  /* UI LOCALIZATION DICTIONARY */
+let currentLang = 'en';
+  let savedInsightEn = '';
+  let savedInsightHi = '';
+
+  function toggleLanguage() {
+      const textElement = document.getElementById("clinical-insight-text");
+      const btn = document.getElementById("lang-toggle-btn");
+      
+      if (currentLang === 'en') {
+          textElement.innerText = savedInsightHi;
+          btn.innerText = "View in English";
+          currentLang = 'hi';
+      } else {
+          textElement.innerText = savedInsightEn;
+          btn.innerText = "Translate to Hindi";
+          currentLang = 'en';
+      }
+  }
+
   const translations = {
     welcome_title: { en: "New here? Let's take a 20-second look around.", hi: "यहाँ नए हैं? आइए 20 सेकंड में चारों ओर देखें।" },
     welcome_desc: { en: "Two stops, one journey: enter check-up numbers to log data securely, and hand doctors a ready-made briefing with full AI insights and trend graphs the moment a mother reaches the hospital.", hi: "डेटा सुरक्षित रूप से दर्ज करने के लिए चेक-अप नंबर दर्ज करें, और अस्पताल पहुंचते ही डॉक्टरों को AI अंतर्दृष्टि और ग्राफ़ के साथ तैयार ब्रीफिंग सौंपें।" },
@@ -314,7 +334,7 @@
     insight_head: { en: "Agent 3 · AI Clinical Insights", hi: "एजेंट 3 · AI क्लिनिकल अंतर्दृष्टि" },
     btn_trans_ai: { en: "Translate Insight to Hindi", hi: "अंतर्दृष्टि का हिंदी में अनुवाद करें" },
     chart_title: { en: "42-Week Vitals Trend", hi: "42-सप्ताह का विटल्स ट्रेंड" },
-    footer: { en: "Built for ANMs and front-line health workers · JananiSetu Prototype", hi: "ANM और फ्रंट-लाइन स्वास्थ्य कार्यकर्ताओं के लिए निर्मित · जननीसेतु प्रोटोटाइप" }
+    footer: { en: "Built for ANMs and front-line health workers · JananiSetu", hi: "ANM और फ्रंट-लाइन स्वास्थ्य कार्यकर्ताओं के लिए निर्मित · जननीसेतु" }
   };
 
   function toggleLang(lang, btn) {
@@ -333,7 +353,7 @@
     });
   }
 
-  // ================= UI NAVIGATION =================
+  /* UI NAVIGATION */
   function goTo(id){
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.getElementById(id).classList.add('active');
@@ -370,7 +390,7 @@
     if (type === 'demo') document.getElementById('demoSearchZone').style.display = 'block';
   }
 
-  // ================= DATA LOGIC =================
+  /* Image Upload */
   function handleImageSelect(input) {
     if (input.files && input.files[0]) {
       document.getElementById('processBtn').style.display = 'block';
@@ -389,7 +409,6 @@
   }
 
   function savePatientData() {
-    // FIXED: Sending all 14 fields EXACTLY as the python backend expects
     const payload = {
         Patient_ID: document.getElementById('man_id').value,
         Name: document.getElementById('man_name').value, 
@@ -422,8 +441,7 @@
     .catch(err => console.error("Save Error:", err));
   }
 
-  // ================= SEARCH =================
-// ================= SEARCH =================
+/* SEARCH */
 function simulateSearch() {
     const input = document.getElementById('search_id');
     
@@ -432,11 +450,10 @@ function simulateSearch() {
         return;
     }
 
-    // 1. Show the UI and set loading text
+    /* set loading text */
     document.getElementById('briefingBox').style.display = 'block';
-    document.getElementById('ai_insight_content').innerText = "Agent 3 is analyzing database...";
+    document.getElementById('clinical-insight-text').innerText = "Agent 3 is analyzing database...";
     
-    // Grab the graph container and hide it while loading
     const chartWrap = document.querySelector('.chart-wrap');
     if (chartWrap) chartWrap.style.display = 'none';
 
@@ -450,27 +467,35 @@ function simulateSearch() {
             return;
         }
 
-        // 2. Put the AI Insight text into the UI
+        // 2. AI TEXT INSIGHTS */
+       // 2. AI TEXT INSIGHTS */
         document.getElementById('patient_title').innerText = "Briefing for " + input.value;
-        document.getElementById('ai_insight_content').innerText = data.insight;
+        
+        // Save the dual-language Orchestrator response
+        savedInsightEn = data.insight_en;
+        savedInsightHi = data.insight_hi;
+        currentLang = 'en'; // Reset to English on new search
+        
+        // Update the UI
+        document.getElementById('clinical-insight-text').innerText = savedInsightEn;
+        document.getElementById('lang-toggle-btn').style.display = "block";
+        document.getElementById('lang-toggle-btn').innerText = "Translate to Hindi";
 
-        // 3. Inject and UNHIDE the 3 Separate Graphs
         if (chartWrap) {
-            // THIS IS THE FIX: Unhide the invisible box!
             chartWrap.style.display = 'block'; 
 
-            // Clean up any old graphs from a previous search
+            /* REMOVE OLD GRAPHS FROM THE MEMORY */
             let oldGrid = document.getElementById('graph-grid');
             if (oldGrid) oldGrid.remove();
 
-            // Create a neat container for the 3 graphs
+            /* GRAPH CONTAINER */
             let grid = document.createElement('div');
             grid.id = 'graph-grid';
             grid.style.display = 'grid';
             grid.style.gap = '15px';
             grid.style.marginTop = '15px';
 
-            // Helper to generate the images beautifully
+            /* GRAPH IMAGE GENRATION */
             function addGraph(base64Data) {
                 if (base64Data) {
                     let img = document.createElement('img');
@@ -485,7 +510,7 @@ function simulateSearch() {
                 }
             }
 
-            // Draw BP, Hb, and Sugar graphs!
+            /* ADDING HB,BP,SUGAR GRAPHS */
             addGraph(data.graph_bp);
             addGraph(data.graph_hb);
             addGraph(data.graph_sugar);
@@ -495,37 +520,9 @@ function simulateSearch() {
     })
     .catch(err => {
         console.error("Search Error:", err);
-        document.getElementById('ai_insight_content').innerText = "Error connecting to backend.";
+        document.getElementById('clinical-insight-text').innerText = "Error connecting to backend.";
     });
 }
-
-  function translateToHindi() {
-    const textToTranslate = document.getElementById('ai_insight_content').innerText;
-    const resultBox = document.getElementById('hindi-result');
-    
-    if (!textToTranslate || textToTranslate === "Analyzing...") return;
-    
-    resultBox.style.display = 'block';
-    resultBox.innerText = 'Translating...';
-
-    fetch('http://127.0.0.1:5000/api/translate', { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ text: textToTranslate, target_lang: 'hi' }) 
-    })
-    .then(res => res.json())
-    .then(data => {
-        if(data.status === 'success') {
-            resultBox.innerText = data.translated_text;
-        } else {
-            resultBox.innerText = "Translation failed.";
-        }
-    })
-    .catch(err => {
-        console.error("Translate Error:", err);
-        resultBox.innerText = "Translation connection error occurred.";
-    });
-  }
 </script>
 </body>
 </html>
