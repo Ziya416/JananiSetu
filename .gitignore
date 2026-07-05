@@ -1,5 +1,3 @@
-.env
-service_account.json
 maternal_health_registry.csv
 desktop.ini
 venv/
