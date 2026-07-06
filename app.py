@@ -30,13 +30,13 @@ if json_creds:
     
     # Initialize Vertex AI using the same credentials and project
     vertexai.init(project=creds_dict["project_id"], location="us-central1", credentials=creds)
-    model = GenerativeModel("gemini-3.5-flash")
+    model = GenerativeModel("gemini-2.5-flash")
     BQ_AVAILABLE = True
 else:
     # Local fallback
     bq_client = bigquery.Client(location="asia-south1")
     vertexai.init(project="big-query-codelab-497213", location="us-central1")
-    model = GenerativeModel("gemini-3.5-flash")
+    model = GenerativeModel("gemini-2.5-flash")
     BQ_AVAILABLE = True
 
 app = Flask(__name__)
