@@ -8,54 +8,38 @@ from matplotlib.ticker import MultipleLocator
 import base64
 from io import BytesIO
 from dotenv import load_dotenv
-import google.generativeai as genai
 import json
 from google.oauth2 import service_account
 from google.cloud import bigquery
 
-# Load environment variables
+# Import Vertex AI instead of standard generativeai
+import vertexai
+from vertexai.generative_models import GenerativeModel, HarmCategory, HarmBlockThreshold
+
 load_dotenv()
+matplotlib.use('Agg')
 
-# Initialize AI Orchestrator
-# Initialize AI Orchestrator
-api_key = os.environ.get("GEMINI_API_KEY")
-if api_key:
-    # Force REST transport to stop Cloud Run from injecting background tokens
-    genai.configure(api_key=api_key, transport="rest")
-    model = genai.GenerativeModel('gemini-1.5-flash')
-else:
-    model = None
-    print("WARNING: Gemini API key not found in .env")
-    
-matplotlib.use('Agg') 
-
-# Cloud Run native credential setup
+# Cloud Run native credential setup for BigQuery and Vertex AI
 json_creds = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
 if json_creds:
-    import json
-    from google.oauth2 import service_account
     creds_dict = json.loads(json_creds)
     creds = service_account.Credentials.from_service_account_info(creds_dict)
+    
+    # Initialize BigQuery
     bq_client = bigquery.Client(credentials=creds, project=creds_dict["project_id"])
+    
+    # Initialize Vertex AI using the same credentials and project
+    vertexai.init(project=creds_dict["project_id"], location="asia-south1", credentials=creds)
+    model = GenerativeModel("gemini-1.5-flash-001")
     BQ_AVAILABLE = True
-
-# BigQuery Client Initialization
-try:
-    json_creds = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
-    if json_creds:
-        creds_dict = json.loads(json_creds)
-        creds = service_account.Credentials.from_service_account_info(creds_dict)
-        bq_client = bigquery.Client(credentials=creds, project=creds_dict["project_id"], location="asia-south1")
-    else:
-        # Local fallback
-        bq_client = bigquery.Client(location="asia-south1")
+else:
+    # Local fallback
+    bq_client = bigquery.Client(location="asia-south1")
+    vertexai.init(project="big-query-codelab-497213", location="asia-south1")
+    model = GenerativeModel("gemini-1.5-flash-001")
     BQ_AVAILABLE = True
-except Exception as e:
-    print(f"CRITICAL: BigQuery init failed: {e}")
-    BQ_AVAILABLE = False
 
 app = Flask(__name__)
-FILE_PATH = "maternal_health_registry.csv"
 
 EXPECTED_COLUMNS = [
     "Patient_ID", "Name", "Husband_Name", "Village", "LMP", "EDD", 
@@ -71,10 +55,7 @@ def home():
 def save_patient():
     data = request.json
     try:
-        # Prepare the row as a dictionary
         row_to_insert = {col: data.get(col, "") for col in EXPECTED_COLUMNS}
-        
-        # Insert directly into BigQuery
         table_id = "big-query-codelab-497213.maternal_health_data.registry-table"
         errors = bq_client.insert_rows_json(table_id, [row_to_insert])
         
@@ -91,7 +72,6 @@ def search_patient():
     if not patient_id:
         return jsonify({"status": "error", "message": "Patient ID required"})
 
-    # Query BigQuery directly
     try:
         query = f"""
             SELECT * FROM `big-query-codelab-497213.maternal_health_data.registry-table` 
@@ -103,20 +83,17 @@ def search_patient():
 
     if patient_data.empty:
         return jsonify({"status": "error", "message": "Patient not found in BigQuery."})
-    
-    # GRAPH
+
     graph_bp = None
     graph_hb = None
     graph_sugar = None
     
-    # GRAPH GENERATION
     try:
         weeks = patient_data['Visit_Week'].fillna(0).astype(int).tolist()
         def extract_num(val, default=0):
             nums = re.findall(r'\d+', str(val))
             return int(nums[0]) if nums else default
 
-        # BP Graph
         plt.figure(figsize=(6, 2.5))
         vals = [int(str(bp).split('/')[0]) if '/' in str(bp) else extract_num(bp) for bp in patient_data['Blood_Pressure']]
         plt.plot(weeks, vals, marker='o', color='#C1483D', linewidth=2)
@@ -124,7 +101,6 @@ def search_patient():
         plt.gca().yaxis.set_major_locator(MultipleLocator(20)); plt.grid(axis='y', linestyle='--', alpha=0.5)
         buf = BytesIO(); plt.savefig(buf, format='png', bbox_inches='tight'); buf.seek(0); graph_bp = base64.b64encode(buf.getvalue()).decode(); plt.close()
 
-        # Hb Graph
         plt.figure(figsize=(6, 2.5))
         vals = pd.to_numeric(patient_data['Hemoglobin_Hb'], errors='coerce').fillna(0).tolist()
         plt.plot(weeks, vals, marker='o', color='#3E6FB0', linewidth=2)
@@ -132,7 +108,6 @@ def search_patient():
         plt.gca().yaxis.set_major_locator(MultipleLocator(2)); plt.grid(axis='y', linestyle='--', alpha=0.5)
         buf = BytesIO(); plt.savefig(buf, format='png', bbox_inches='tight'); buf.seek(0); graph_hb = base64.b64encode(buf.getvalue()).decode(); plt.close()
         
-        # Sugar Graph
         plt.figure(figsize=(6, 2.5))
         vals = [extract_num(s) for s in patient_data['Blood_Sugar']]
         plt.plot(weeks, vals, marker='o', color='#E8A33D', linewidth=2)
@@ -143,7 +118,6 @@ def search_patient():
     except Exception as e:
         print(f"Graph error: {e}")
 
-    # LATEST VITALS FOR ORCHESTRATOR
     latest = patient_data.iloc[-1]
     
     def extract_num(val, default=0):
@@ -171,22 +145,17 @@ def search_patient():
         HINDI: [Your Hindi text here]"""
 
         try:
-            # Fix 1: Force the stable 1.5-flash model
-            current_model = genai.GenerativeModel('gemini-1.5-flash')
+            # Vertex AI specific safety settings syntax
+            safety_settings = {
+                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+            }
             
-            # Fix 2: Bypass strict medical safety blocks
-            response = current_model.generate_content(
-                prompt,
-                safety_settings=[
-                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"}
-                ]
-            )
+            response = model.generate_content(prompt, safety_settings=safety_settings)
             raw_text = response.text
             
-            # Parse the dual-language response
             if "HINDI:" in raw_text:
                 parts = raw_text.split("HINDI:")
                 insight_en = parts[0].replace("ENGLISH:", "").strip()
@@ -197,7 +166,6 @@ def search_patient():
                 
         except Exception as e:
             print(f"LLM Error: {e}")
-            # Fix 3: Print the ACTUAL error to your website screen
             insight_en = f"SYSTEM ERROR: {str(e)}"
             insight_hi = "त्रुटि उत्पन्न हुई।"
 
