@@ -170,12 +170,17 @@ def search_patient():
         HINDI: [Your Hindi text here]"""
 
         try:
-            # Added safety settings to stop it from blocking medical text
-            response = model.generate_content(
+            # Fix 1: Force the stable 1.5-flash model
+            current_model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            # Fix 2: Bypass strict medical safety blocks
+            response = current_model.generate_content(
                 prompt,
                 safety_settings=[
                     {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"}
+                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"}
                 ]
             )
             raw_text = response.text
@@ -191,7 +196,8 @@ def search_patient():
                 
         except Exception as e:
             print(f"LLM Error: {e}")
-            insight_en = "Error generating AI insight."
+            # Fix 3: Print the ACTUAL error to your website screen
+            insight_en = f"SYSTEM ERROR: {str(e)}"
             insight_hi = "त्रुटि उत्पन्न हुई।"
 
     return jsonify({
