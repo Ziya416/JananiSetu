@@ -170,7 +170,14 @@ def search_patient():
         HINDI: [Your Hindi text here]"""
 
         try:
-            response = model.generate_content(prompt)
+            # Added safety settings to stop it from blocking medical text
+            response = model.generate_content(
+                prompt,
+                safety_settings=[
+                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"}
+                ]
+            )
             raw_text = response.text
             
             # Parse the dual-language response
@@ -181,6 +188,7 @@ def search_patient():
             else:
                 insight_en = raw_text
                 insight_hi = "Translation error."
+                
         except Exception as e:
             print(f"LLM Error: {e}")
             insight_en = "Error generating AI insight."
