@@ -19,12 +19,15 @@ load_dotenv()
 # Initialize AI Orchestrator
 api_key = os.environ.get("GEMINI_API_KEY")
 if api_key:
-    genai.configure(api_key=api_key)
+    # 1. Import this to block Cloud Run's background credentials
+    from google.auth.credentials import AnonymousCredentials
+    
+    genai.configure(api_key=api_key, credentials=AnonymousCredentials())
     model = genai.GenerativeModel('gemini-1.5-flash')
 else:
     model = None
     print("WARNING: Gemini API key not found in .env")
-
+    
 matplotlib.use('Agg') 
 
 # Cloud Run native credential setup
@@ -38,7 +41,6 @@ if json_creds:
     BQ_AVAILABLE = True
 
 # BigQuery Client Initialization
-# Unified BigQuery Client Initialization
 try:
     json_creds = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
     if json_creds:
