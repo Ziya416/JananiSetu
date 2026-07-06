@@ -30,13 +30,13 @@ if json_creds:
     
     # Initialize Vertex AI using the same credentials and project
     vertexai.init(project=creds_dict["project_id"], location="us-central1", credentials=creds)
-    model = GenerativeModel("gemini-2.5-flash")
+    model = GenerativeModel("gemini-3.5-flash")
     BQ_AVAILABLE = True
 else:
     # Local fallback
     bq_client = bigquery.Client(location="asia-south1")
     vertexai.init(project="big-query-codelab-497213", location="us-central1")
-    model = GenerativeModel("gemini-2.5-flash")
+    model = GenerativeModel("gemini-3.5-flash")
     BQ_AVAILABLE = True
 
 app = Flask(__name__)
@@ -137,7 +137,7 @@ def search_patient():
     if model:
         prompt = f"""Act as a maternal health orchestrator. 
         Task 1: Analyze these vitals for patient {patient_id}: BP {bp_val}, Hb {hb}, Sugar {sugar}. 
-        Task 2: Generate a concise clinical insight (2-3 sentences) for the health worker based on medical guidelines and just show the alerts and last visit's vitals and also give the Comorbidities_&_Remarks also show alerts and last visit's vitals with some paragraph spacing.
+        Task 2: Generate a concise clinical insight (2-3 sentences) for the health worker based on medical guidelines and just show the alerts and last visit's vitals and also give the Comorbidities_&_Remarks whatever the manual form has also show alerts and last visit's vitals with some paragraph spacing. for the Comorbidities_&_Remarks you can just copy & paste it into the response section and last visit vitals should be of like hb, bp and sugar will do.
         Task 3: Translate your exact insight into Hindi.
         
         Format your response EXACTLY like this, with no extra text or markdown:
