@@ -38,14 +38,19 @@ if json_creds:
     BQ_AVAILABLE = True
 
 # BigQuery Client Initialization
+# Unified BigQuery Client Initialization
 try:
-    # Render handles credentials via environment variables, but keeping this for local testing if needed
-    if os.path.exists("service_account.json"):
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "service_account.json"
-    bq_client = bigquery.Client(location="asia-south1")
+    json_creds = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+    if json_creds:
+        creds_dict = json.loads(json_creds)
+        creds = service_account.Credentials.from_service_account_info(creds_dict)
+        bq_client = bigquery.Client(credentials=creds, project=creds_dict["project_id"], location="asia-south1")
+    else:
+        # Local fallback
+        bq_client = bigquery.Client(location="asia-south1")
     BQ_AVAILABLE = True
 except Exception as e:
-    print(f"BigQuery init failed: {e}")
+    print(f"CRITICAL: BigQuery init failed: {e}")
     BQ_AVAILABLE = False
 
 app = Flask(__name__)
