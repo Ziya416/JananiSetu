@@ -24,6 +24,16 @@ else:
 
 matplotlib.use('Agg') 
 
+# Cloud Run native credential setup
+json_creds = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+if json_creds:
+    import json
+    from google.oauth2 import service_account
+    creds_dict = json.loads(json_creds)
+    creds = service_account.Credentials.from_service_account_info(creds_dict)
+    bq_client = bigquery.Client(credentials=creds, project=creds_dict["project_id"])
+    BQ_AVAILABLE = True
+
 # BigQuery Client Initialization
 try:
     from google.cloud import bigquery
