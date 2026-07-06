@@ -30,7 +30,7 @@ if json_creds:
     
     # Initialize Vertex AI using the same credentials and project
     vertexai.init(project=creds_dict["project_id"], location="us-central1", credentials=creds)
-    model = GenerativeModel("gemini-1.5-flash-001")
+    model = GenerativeModel("gemini-2.5-flash-001")
     BQ_AVAILABLE = True
 else:
     # Local fallback
