@@ -130,19 +130,49 @@ def search_patient():
     except:
         hb = 0.0
     sugar = extract_num(latest.get('Blood_Sugar', '0'))
+
+    comorbidities = str(latest.get('Comorbidities_Remarks', 'None reported'))
     
     insight_en = "AI Model not configured. Vitals require manual review."
     insight_hi = "एआई मॉडल कॉन्फ़िगर नहीं किया गया है।"
 
     if model:
         prompt = f"""Act as a maternal health orchestrator. 
-        Task 1: Analyze these vitals for patient {patient_id}: BP {bp_val}, Hb {hb}, Sugar {sugar}. 
-        Task 2: Generate a concise clinical insight (2-3 sentences) for the health worker based on medical guidelines and just show the alerts and last visit's vitals and also give the Comorbidities_&_Remarks whatever the manual form has also show alerts and last visit's vitals with some paragraph spacing. for the Comorbidities_&_Remarks you can just copy & paste it into the response section and last visit vitals should be of like hb, bp and sugar will do.
-        Task 3: Translate your exact insight into Hindi.
+        
+        PATIENT DATA:
+        Patient ID: {patient_id}
+        BP: {bp_val}
+        Hb: {hb}
+        Sugar: {sugar}
+        Comorbidities & Remarks: {comorbidities}
+        
+        Task 1: Analyze the vitals based on standard maternal medical guidelines.
+        Task 2: Generate a concise clinical insight (2-3 sentences) alerting the health worker to any risks.
+        Task 3: Below your insight, explicitly list the vitals and comorbidities EXACTLY as provided in the PATIENT DATA above. Use paragraph spacing.
+        Task 4: Translate the ENTIRE English response (including the vitals and comorbidities list) into Hindi.
         
         Format your response EXACTLY like this, with no extra text or markdown:
-        ENGLISH: [Your English text here]
-        HINDI: [Your Hindi text here]"""
+        ENGLISH: 
+        [Your clinical insight here]
+        
+        Last Visit Vitals:
+        BP: {bp_val}
+        Hb: {hb}
+        Sugar: {sugar}
+        
+        Comorbidities & Remarks:
+        {comorbidities}
+        
+        HINDI: 
+        [Hindi translation of the clinical insight]
+        
+        अंतिम विज़िट के वाइटल्स:
+        BP: {bp_val}
+        Hb: {hb}
+        Sugar: {sugar}
+        
+        सहवर्ती रोग और टिप्पणियाँ:
+        {comorbidities}"""
 
         try:
             # Vertex AI specific safety settings syntax
