@@ -39,7 +39,6 @@ if json_creds:
 
 # BigQuery Client Initialization
 try:
-    from google.cloud import bigquery
     # Render handles credentials via environment variables, but keeping this for local testing if needed
     if os.path.exists("service_account.json"):
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "service_account.json"
@@ -66,15 +65,17 @@ def home():
 def save_patient():
     data = request.json
     try:
-        clean_data = {col: data.get(col, "") for col in EXPECTED_COLUMNS}
-        df = pd.DataFrame([clean_data], columns=EXPECTED_COLUMNS)
-
-        if os.path.exists(FILE_PATH):
-            df.to_csv(FILE_PATH, mode='a', header=False, index=False)
+        # Prepare the row as a dictionary
+        row_to_insert = {col: data.get(col, "") for col in EXPECTED_COLUMNS}
+        
+        # Insert directly into BigQuery
+        table_id = "big-query-codelab-497213.maternal_health_data.registry-table"
+        errors = bq_client.insert_rows_json(table_id, [row_to_insert])
+        
+        if errors == []:
+            return jsonify({"status": "success", "message": "Saved to BigQuery."})
         else:
-            df.to_csv(FILE_PATH, mode='w', header=True, index=False)
-
-        return jsonify({"status": "success", "message": "Saved to Registry. Data aligned correctly."})
+            return jsonify({"status": "error", "message": f"BigQuery errors: {errors}"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
@@ -84,15 +85,20 @@ def search_patient():
     if not patient_id:
         return jsonify({"status": "error", "message": "Patient ID required"})
 
-    patient_data = pd.DataFrame()
+    # Query BigQuery directly
+    try:
+        query = f"""
+            SELECT * FROM `big-query-codelab-497213.maternal_health_data.registry-table` 
+            WHERE CAST(Patient_ID AS STRING) = '{patient_id}'
+        """
+        patient_data = bq_client.query(query).to_dataframe()
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Database search failed: {e}"})
 
-    # FETCH DATA 
-    if BQ_AVAILABLE:
-        try:
-            query = f"SELECT * FROM `big-query-codelab-497213.maternal_health_data.registry-table` WHERE CAST(Patient_ID AS STRING) = '{patient_id}'"
-            patient_data = bq_client.query(query).to_dataframe()
-        except Exception as e:
-            print(f"BQ failed: {e}")
+    if patient_data.empty:
+        return jsonify({"status": "error", "message": "Patient not found in BigQuery."})
+    
+    # ... KEEP YOUR EXISTING GRAPH/AI LOGIC BELOW THIS LINE ...
 
     if patient_data.empty and os.path.exists(FILE_PATH):
        try:
