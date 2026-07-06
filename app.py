@@ -95,9 +95,16 @@ def search_patient():
             print(f"BQ failed: {e}")
 
     if patient_data.empty and os.path.exists(FILE_PATH):
-        try:
+       try:
+            # Read CSV and drop any rows where Patient_ID is completely empty
             df = pd.read_csv(FILE_PATH)
-            patient_data = df[df['Patient_ID'].astype(str) == str(patient_id)]
+            df = df.dropna(subset=['Patient_ID'])
+            
+            # Standardize Patient_ID to string, remove extra spaces, and compare
+            df['Patient_ID'] = df['Patient_ID'].astype(str).str.strip()
+            search_id = str(patient_id).strip()
+            
+            patient_data = df[df['Patient_ID'] == search_id]
         except Exception as e:
             print(f"CSV read failed: {e}")
 
