@@ -9,6 +9,9 @@ import base64
 from io import BytesIO
 from dotenv import load_dotenv
 import google.generativeai as genai
+import json
+from google.oauth2 import service_account
+from google.cloud import bigquery
 
 # Load environment variables
 load_dotenv()
