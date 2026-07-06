@@ -98,25 +98,7 @@ def search_patient():
     if patient_data.empty:
         return jsonify({"status": "error", "message": "Patient not found in BigQuery."})
     
-    # ... KEEP YOUR EXISTING GRAPH/AI LOGIC BELOW THIS LINE ...
-
-    if patient_data.empty and os.path.exists(FILE_PATH):
-       try:
-            # Read CSV and drop any rows where Patient_ID is completely empty
-            df = pd.read_csv(FILE_PATH)
-            df = df.dropna(subset=['Patient_ID'])
-            
-            # Standardize Patient_ID to string, remove extra spaces, and compare
-            df['Patient_ID'] = df['Patient_ID'].astype(str).str.strip()
-            search_id = str(patient_id).strip()
-            
-            patient_data = df[df['Patient_ID'] == search_id]
-        except Exception as e:
-            print(f"CSV read failed: {e}")
-
-    if patient_data.empty:
-        return jsonify({"status": "error", "message": "Patient not found."})
-
+    # GRAPH
     graph_bp = None
     graph_hb = None
     graph_sugar = None
