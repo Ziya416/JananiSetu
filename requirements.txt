@@ -6,3 +6,5 @@ google-generativeai
 python-dotenv
 gunicorn
 db-dtypes
+google-auth
+pyarrow
