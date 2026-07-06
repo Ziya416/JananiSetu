@@ -11,7 +11,7 @@ JananiSetu is an intelligent maternal health system designed to support frontlin
 - Backend : Python (Flask)
 - AI Logic : LLM-powered Orchestrator Agent & Analytical Models
 - Data Infrastructure : Google BigQuery
-- Deployment : Render
+- Deployment : Google Cloud Platform
 
 
 
