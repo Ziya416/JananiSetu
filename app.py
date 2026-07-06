@@ -29,13 +29,13 @@ if json_creds:
     bq_client = bigquery.Client(credentials=creds, project=creds_dict["project_id"])
     
     # Initialize Vertex AI using the same credentials and project
-    vertexai.init(project=creds_dict["project_id"], location="asia-south1", credentials=creds)
+    vertexai.init(project=creds_dict["project_id"], location="us-central1", credentials=creds)
     model = GenerativeModel("gemini-1.5-flash-001")
     BQ_AVAILABLE = True
 else:
     # Local fallback
     bq_client = bigquery.Client(location="asia-south1")
-    vertexai.init(project="big-query-codelab-497213", location="asia-south1")
+    vertexai.init(project="big-query-codelab-497213", location="us-central1")
     model = GenerativeModel("gemini-1.5-flash-001")
     BQ_AVAILABLE = True
 
