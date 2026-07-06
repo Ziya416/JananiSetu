@@ -431,7 +431,7 @@ let currentLang = 'en';
         return;
     }
 
-    fetch('http://127.0.0.1:5000/api/save', { 
+    fetch('/api/save', { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
         body: JSON.stringify(payload) 
@@ -457,7 +457,7 @@ function simulateSearch() {
     const chartWrap = document.querySelector('.chart-wrap');
     if (chartWrap) chartWrap.style.display = 'none';
 
-    fetch(`http://127.0.0.1:5000/api/search?patient_id=${input.value}`)
+    fetch('/api/search?patient_id=' + input.value)
     .then(res => res.json())
     .then(data => {
 
