@@ -17,12 +17,11 @@ from google.cloud import bigquery
 load_dotenv()
 
 # Initialize AI Orchestrator
+# Initialize AI Orchestrator
 api_key = os.environ.get("GEMINI_API_KEY")
 if api_key:
-    # 1. Import this to block Cloud Run's background credentials
-    from google.auth.credentials import AnonymousCredentials
-    
-    genai.configure(api_key=api_key, credentials=AnonymousCredentials())
+    # Force REST transport to stop Cloud Run from injecting background tokens
+    genai.configure(api_key=api_key, transport="rest")
     model = genai.GenerativeModel('gemini-1.5-flash')
 else:
     model = None
