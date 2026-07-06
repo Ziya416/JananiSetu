@@ -36,7 +36,7 @@ else:
     # Local fallback
     bq_client = bigquery.Client(location="asia-south1")
     vertexai.init(project="big-query-codelab-497213", location="us-central1")
-    model = GenerativeModel("gemini-1.5-flash-001")
+    model = GenerativeModel("gemini-2.5-flash-001")
     BQ_AVAILABLE = True
 
 app = Flask(__name__)
