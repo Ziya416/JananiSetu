@@ -208,6 +208,32 @@ def search_patient():
         "insight_hi": insight_hi
     })
 
+@app.route('/api/search_demographic', methods=['GET'])
+def search_demographic():
+    name = request.args.get('name', '').strip()
+    village = request.args.get('village', '').strip()
+    
+    if not name or not village:
+        return jsonify({"status": "error", "message": "Name and Village are required."})
+
+    try:
+        # Query BigQuery for a matching patient
+        query = f"""
+            SELECT Patient_ID FROM `big-query-codelab-497213.maternal_health_data.registry-table` 
+            WHERE LOWER(Name) = LOWER('{name}') AND LOWER(Village) = LOWER('{village}')
+            LIMIT 1
+        """
+        result = bq_client.query(query).to_dataframe()
+        
+        if result.empty:
+            return jsonify({"status": "error", "message": "No patient found with this name and village."})
+            
+        matched_id = str(result.iloc[0]['Patient_ID'])
+        return jsonify({"status": "success", "patient_id": matched_id})
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Database search failed: {e}"})
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
