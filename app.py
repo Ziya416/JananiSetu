@@ -172,7 +172,7 @@ def search_patient():
         Sugar: {sugar}
         
         सहवर्ती रोग और टिप्पणियाँ:
-        {comorbidities}"""
+        [Hindi translation of the Comorbidities & Remarks here]"""
 
         try:
             # Vertex AI specific safety settings syntax
