@@ -249,11 +249,10 @@
 
         <div id="demoSearchZone" style="display:none; text-align:center;">
           <p style="margin: 0 0 15px; font-weight:600;" data-translate="demo_hint">Search by Patient Name and Village.</p>
-          <input type="text" placeholder="Patient Name" style="margin-bottom: 10px;">
-          <input type="text" placeholder="Village / Location" style="margin-bottom: 15px;">
-          <button class="btn-primary" style="width: auto; margin: 0 auto; padding: 10px 24px;" onclick="alert('Demographic matching requires full database indexing.')" data-translate="btn_search_rec">Search Records</button>
+          <input type="text" id="demo_name" placeholder="Patient Name" style="margin-bottom: 10px;">
+          <input type="text" id="demo_village" placeholder="Village / Location" style="margin-bottom: 15px;">
+          <button class="btn-primary" style="width: auto; margin: 0 auto; padding: 10px 24px;" onclick="searchByDemographics()" data-translate="btn_search_rec">Search Records</button>
         </div>
-      </div>
 
       <div id="briefingBox" style="display:none; margin-top:30px; border-top: 2px dashed var(--line); padding-top: 20px;">
         <h3 id="patient_title">Executive Labor Briefing</h3>
@@ -441,6 +440,35 @@ let currentLang = 'en';
     .catch(err => console.error("Save Error:", err));
   }
 
+  /* DEMOGRAPHIC SEARCH */
+  async function searchByDemographics() {
+      const name = document.getElementById('demo_name').value.trim();
+      const village = document.getElementById('demo_village').value.trim();
+
+      if (!name || !village) {
+          alert("Please enter both Name and Village.");
+          return;
+      }
+
+      try {
+          const response = await fetch(`/api/search_demographic?name=${encodeURIComponent(name)}&village=${encodeURIComponent(village)}`);
+          const data = await response.json();
+
+          if (data.status === "success") {
+              alert("Patient found! Loading records for ID: " + data.patient_id);
+              
+              // Put the found ID into the main search box and trigger the AI orchestration
+              document.getElementById('search_id').value = data.patient_id;
+              simulateSearch(); 
+          } else {
+              alert("Error: " + data.message);
+          }
+      } catch (error) {
+          alert("Failed to connect to the server for demographic search.");
+          console.error(error);
+      }
+  }
+  
 /* SEARCH */
 function simulateSearch() {
     const input = document.getElementById('search_id');
