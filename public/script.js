@@ -1,67 +1,9 @@
-let currentLang = 'en';
-let savedInsightEn = '';
-let savedInsightHi = '';
-let chartInstances = {}; // Keep track of charts so we can destroy them on new searches
-
 let isSignupMode = false;
+let uploadedImageBase64 = "";
+let currentInsightEn = "";
+let currentInsightHi = "";
+let showingHindi = false; // For the AI Insight box
 
-function toggleAuthMode() {
-    isSignupMode = !isSignupMode;
-    document.getElementById('authTitle').innerText = isSignupMode ? "Create an Account" : "Login to JananiSetu";
-    document.getElementById('authActionBtn').innerText = isSignupMode ? "Sign Up" : "Login";
-    document.getElementById('authToggleHint').innerText = isSignupMode ? "Already have an account? Login" : "Don't have an account? Sign up";
-    document.getElementById('roleSelection').style.display = isSignupMode ? "block" : "none";
-}
-
-function togglePasswordVisibility(inputId, btnElement) {
-    const input = document.getElementById(inputId);
-    if (input.type === "password") {
-        input.type = "text";
-        btnElement.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>'; 
-    } else {
-        input.type = "password";
-        btnElement.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>'; 
-    }
-}
-
-function handleAuth() {
-    const user = document.getElementById('authUsername').value;
-    const pass = document.getElementById('authPassword').value;
-    const role = document.getElementById('authRole').value;
-    const endpoint = isSignupMode ? '/api/signup' : '/api/login';
-    const payload = isSignupMode ? { username: user, password: pass, role: role } : { username: user, password: pass };
-
-    fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.status === "success") {
-            if (isSignupMode) {
-                alert("Account created successfully! Please login with your credentials.");
-                document.getElementById('authPassword').value = '';
-                toggleAuthMode(); 
-            } else {
-                document.getElementById('loginOverlay').style.display = 'none';      // Successful Login: Dismiss overlay and unlock full platform for everyone
-                
-                let roleName = "Health Worker";
-                if (data.role === 'phc') roleName = "PHC Worker";
-                if (data.role === 'chc') roleName = "CHC Worker";
-                if (data.role === 'institutional') roleName = "Institutional Worker";
-
-                alert(`Welcome! Logged in as ${roleName}. Accessing full platform.`);
-                document.querySelectorAll('.station').forEach(s => s.style.display = 'flex');                // Ensuring both stations are visible to everyone
-                goTo('p1');
-            }
-        } else {
-            alert(data.message);
-        }
-    });
-}
-
-// --- JSON TRANSLATION DICTIONARY ---
 const translations = {
     "en": {
         "welcome_title": "New here? Let's take a 20-second look around.",
@@ -129,15 +71,73 @@ const translations = {
     }
 };
 
-// --- LANGUAGE TOGGLE FUNCTION ---
+// ==========================================
+// 2. AUTHENTICATION & UI TOGGLES
+// ==========================================
+function toggleAuthMode() {
+    isSignupMode = !isSignupMode;
+    document.getElementById('authTitle').innerText = isSignupMode ? "Sign Up for JananiSetu" : "Login to JananiSetu";
+    document.getElementById('authActionBtn').innerText = isSignupMode ? "Create Account" : "Login";
+    document.getElementById('authToggleHint').innerText = isSignupMode ? "Already have an account? Login" : "Don't have an account? Sign up";
+    document.getElementById('roleSelection').style.display = isSignupMode ? "block" : "none";
+}
+
+function togglePasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (input.type === "password") {
+        input.type = "text";
+        btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+    } else {
+        input.type = "password";
+        btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+    }
+}
+
+function handleAuth() {
+    const user = document.getElementById('authUsername').value;
+    const pass = document.getElementById('authPassword').value;
+    const role = document.getElementById('authRole').value;
+    const endpoint = isSignupMode ? '/api/signup' : '/api/login';
+    const payload = isSignupMode ? { username: user, password: pass, role: role } : { username: user, password: pass };
+
+    fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            if (isSignupMode) {
+                alert("Account created successfully! Please login with your credentials.");
+                document.getElementById('authPassword').value = '';
+                toggleAuthMode(); 
+            } else {
+                document.getElementById('loginOverlay').style.display = 'none';
+                let roleName = "Health Worker";
+                if (data.role === 'phc') roleName = "PHC Worker";
+                if (data.role === 'chc') roleName = "CHC Worker";
+                if (data.role === 'institutional') roleName = "Institutional Worker";
+
+                alert(`Welcome! Logged in as ${roleName}. Accessing full platform.`);
+                document.querySelectorAll('.station').forEach(s => s.style.display = 'flex');
+                goTo('p1');
+            }
+        } else {
+            alert(data.message);
+        }
+    });
+}
+
+// ==========================================
+// 3. GLOBAL TRANSLATION
+// ==========================================
 function toggleLang(lang, btnElement) {
-    // 1. Update the button styles visually
     document.querySelectorAll('.lang-toggle button').forEach(btn => btn.classList.remove('active'));
     if (btnElement) {
         btnElement.classList.add('active');
     }
 
-    // 2. Map through all HTML elements that have the data-translate attribute
     document.querySelectorAll('[data-translate]').forEach(el => {
         const key = el.getAttribute('data-translate');
         if (translations[lang] && translations[lang][key]) {
@@ -146,54 +146,55 @@ function toggleLang(lang, btnElement) {
     });
 }
 
-function toggleLang(lang, btn) {
-    document.querySelectorAll('.lang-toggle button').forEach(b => b.classList.remove('active'));
+// ==========================================
+// 4. NAVIGATION & PANELS
+// ==========================================
+function dismissWelcome() {
+    document.getElementById('welcomeBanner').style.display = 'none';
+}
+
+function goTo(panelId) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.station').forEach(s => s.classList.remove('active'));
+    
+    document.getElementById(panelId).classList.add('active');
+    document.querySelector(`button[data-panel="${panelId}"]`).classList.add('active');
+}
+
+function setEntryMode(mode, btn) {
+    document.querySelectorAll('#entryToggleGroup button').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     
-    document.querySelectorAll('[data-translate]').forEach(el => {
-        const key = el.getAttribute('data-translate');
-        if(translations[key]) {
-            if(el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-                el.placeholder = translations[key][lang];
-            } else {
-                el.innerText = translations[key][lang];
-            }
-        }
-    });
+    if(mode === 'ocr') {
+        document.getElementById('uploadZone').style.display = 'block';
+        document.getElementById('manualEntryZone').style.display = 'none';
+    } else {
+        document.getElementById('uploadZone').style.display = 'none';
+        document.getElementById('manualEntryZone').style.display = 'block';
+    }
 }
 
-function goTo(id){
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    document.querySelectorAll('.station').forEach((s, idx) => {
-        s.classList.toggle('active', (id === 'p1' && idx === 0) || (id === 'p2' && idx === 1));
-    });
-}
-
-function dismissWelcome(){ document.getElementById('welcomeBanner').classList.add('dismissed'); }
-
-function setEntryMode(mode, clickedBtn) {
-    document.querySelectorAll('#entryToggleGroup button').forEach(b => b.classList.remove('active'));
-    clickedBtn.classList.add('active');
-    document.getElementById('uploadZone').style.display = mode === 'ocr' ? 'block' : 'none';
-    document.getElementById('manualEntryZone').style.display = mode === 'manual' ? 'block' : 'none';
-}
-
-function showIdentityMethod(type, btn) {
+function showIdentityMethod(method, btn) {
     document.querySelectorAll('#identityToggleGroup button').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    document.getElementById('scannerZone').style.display = type === 'scan' ? 'block' : 'none';
-    document.getElementById('manualSearchZone').style.display = type === 'manual' ? 'block' : 'none';
-    document.getElementById('demoSearchZone').style.display = type === 'demo' ? 'block' : 'none';
+    
+    document.getElementById('scannerZone').style.display = 'none';
+    document.getElementById('manualSearchZone').style.display = 'none';
+    document.getElementById('demoSearchZone').style.display = 'none';
+    
+    if(method === 'scan') document.getElementById('scannerZone').style.display = 'block';
+    if(method === 'manual') document.getElementById('manualSearchZone').style.display = 'block';
+    if(method === 'demo') document.getElementById('demoSearchZone').style.display = 'block';
 }
 
-let uploadedImageBase64 = "";
-
+// ==========================================
+// 5. DOCUMENT AI & SAVING (PANEL 1)
+// ==========================================
 function handleImageSelect(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            uploadedImageBase64 = e.target.result; // Save the base64 string for the API call
+            uploadedImageBase64 = e.target.result; 
             document.getElementById('processBtn').style.display = 'block';
         };
         reader.readAsDataURL(input.files[0]);
@@ -202,12 +203,11 @@ function handleImageSelect(input) {
 
 function processOCR() {
     const btn = document.getElementById('processBtn');
-    if (!uploadedImageBase64) {
-        return alert("Please select an image first.");
-    }
+    if (!uploadedImageBase64) return alert("Please select an image first.");
     
     btn.innerText = "Analyzing Document with AI...";
-    fetch('/api/ocr', {                  // Call the real Gemini Vision endpoint in app.py
+    
+    fetch('/api/ocr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: uploadedImageBase64 })
@@ -215,9 +215,7 @@ function processOCR() {
     .then(res => res.json())
     .then(data => {
         btn.innerText = "Process Document";
-        
         if (data.status === "success" && data.data) {
-            // Autofill the manual entry form with the AI extracted data
             if(data.data.Patient_ID) document.getElementById('man_id').value = data.data.Patient_ID;
             if(data.data.Name) document.getElementById('man_name').value = data.data.Name;
             if(data.data.Blood_Pressure) document.getElementById('man_bp').value = data.data.Blood_Pressure;
@@ -225,28 +223,27 @@ function processOCR() {
             if(data.data.Blood_Sugar) document.getElementById('man_sugar').value = data.data.Blood_Sugar;
             
             alert("Document AI extraction complete! Please verify the details.");
-            
-            setEntryMode('manual', document.querySelectorAll('#entryToggleGroup button')[1]);  // Automatically switch the UI to manual mode so the user can see the filled data
+            setEntryMode('manual', document.querySelectorAll('#entryToggleGroup button')[1]);
         } else {
             alert("Error: " + (data.message || "Failed to parse document."));
         }
     })
     .catch(err => {
         btn.innerText = "Process Document";
-        alert("Connection error during OCR.");
+        alert("Connection error during OCR. Please wait a moment and try again.");
     });
 }
 
 function savePatientData() {
     const payload = {
         Patient_ID: document.getElementById('man_id').value,
-        Name: document.getElementById('man_name').value, 
+        Name: document.getElementById('man_name').value,
         Husband_Name: document.getElementById('man_husband').value,
         Village: document.getElementById('man_village').value,
+        Visit_Week: document.getElementById('man_week').value,
         LMP: document.getElementById('man_lmp').value,
         EDD: document.getElementById('man_edd').value,
         Obstetric_History: document.getElementById('man_obs').value,
-        Visit_Week: document.getElementById('man_week').value,
         Blood_Pressure: document.getElementById('man_bp').value,
         Hemoglobin_Hb: document.getElementById('man_hb').value,
         Blood_Sugar: document.getElementById('man_sugar').value,
@@ -255,93 +252,140 @@ function savePatientData() {
         Comorbidities_Remarks: document.getElementById('man_notes').value
     };
 
-    if (!payload.Patient_ID || !payload.Visit_Week) return alert("Patient ID and Visit Week are required!");
-    fetch('/api/save', { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify(payload) 
-    }).then(res => res.json()).then(data => alert(data.message));
-}
+    if(!payload.Patient_ID) return alert("Patient ID is required.");
 
-async function searchByDemographics() {
-    const name = document.getElementById('demo_name').value.trim();
-    const village = document.getElementById('demo_village').value.trim();
-    if (!name || !village) return alert("Please enter both Name and Village.");
-
-    try {
-        const res = await fetch(`/api/search_demographic?name=${encodeURIComponent(name)}&village=${encodeURIComponent(village)}`);
-        const data = await res.json();
-        if (data.status === "success") {
-            alert("Patient found! Loading records for ID: " + data.patient_id);
-            document.getElementById('search_id').value = data.patient_id;
-            simulateSearch(); 
+    fetch('/api/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === 'success') {
+            alert('Data saved securely to database!');
+            document.querySelectorAll('#manualEntryZone input').forEach(i => i.value = '');
+            document.getElementById('man_notes').value = '';
         } else {
-            alert("Error: " + data.message);
+            alert('Error: ' + data.message);
         }
-    } catch (e) { alert("Failed to connect to the server."); }
+    });
 }
 
-function renderChart(canvasId, label, dataArray, labelsArray, color, maxVal) {
-    const ctx = document.getElementById(canvasId).getContext('2d');
-    if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
-    chartInstances[canvasId] = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labelsArray,
-            datasets: [{
-                label: label,
-                data: dataArray,
-                borderColor: color,
-                backgroundColor: color,
-                tension: 0.3,
-                borderWidth: 2,
-                pointRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: { min: 0, max: maxVal },
-                x: { title: { display: true, text: 'Gestational Week' } }
-            }
+// ==========================================
+// 6. SEARCH & AI INSIGHTS (PANEL 2)
+// ==========================================
+function searchByDemographics() {
+    const name = document.getElementById('demo_name').value;
+    const village = document.getElementById('demo_village').value;
+    
+    if(!name || !village) return alert("Please enter both Name and Village.");
+    
+    fetch(`/api/search_demographic?name=${name}&village=${village}`)
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === 'success') {
+            document.getElementById('search_id').value = data.patient_id;
+            alert(`Patient Found: ${data.patient_id}. Switching to manual search to pull records.`);
+            showIdentityMethod('manual', document.querySelectorAll('#identityToggleGroup button')[1]);
+            simulateSearch();
+        } else {
+            alert(data.message);
         }
     });
 }
 
 function simulateSearch() {
-    const input = document.getElementById('search_id');
-    if (!input || input.value.trim() === "") return alert("Please enter a Patient ID.");
+    const pid = document.getElementById('search_id').value;
+    if (!pid) return alert("Enter Patient ID");
+    
     document.getElementById('briefingBox').style.display = 'block';
-    document.getElementById('clinical-insight-text').innerText = "Agent 3 is analyzing database...";
-    const chartWrap = document.getElementById('chart-wrap');
+    document.getElementById('patient_title').innerText = "Fetching securely...";
+    document.getElementById('clinical-insight-text').innerText = "AI is analyzing medical history...";
+    document.getElementById('lang-toggle-btn').style.display = 'none';
+    document.getElementById('chart-wrap').style.display = 'none';
 
-    if (chartWrap) chartWrap.style.display = 'none';
-    fetch('/api/search?patient_id=' + input.value)
+    fetch(`/api/search?patient_id=${pid}`)
     .then(res => res.json())
     .then(data => {
-        if (data.status === "error") {
-            alert(data.message);
-            document.getElementById('briefingBox').style.display = 'none';
+        if (data.status === 'error') {
+            document.getElementById('patient_title').innerText = "Patient Not Found";
+            document.getElementById('clinical-insight-text').innerText = data.message;
             return;
         }
 
-        document.getElementById('patient_title').innerText = "Briefing for " + input.value;
-        savedInsightEn = data.insight_en;
-        savedInsightHi = data.insight_hi;
-        currentLang = 'en'; 
+        document.getElementById('patient_title').innerText = `Executive Labor Briefing: ${pid}`;
         
-        document.getElementById('clinical-insight-text').innerText = savedInsightEn;
-        document.getElementById('lang-toggle-btn').style.display = "block";
-        document.getElementById('lang-toggle-btn').innerText = "Translate to Hindi";
-
-        if (chartWrap && data.history) {
-            chartWrap.style.display = 'block'; 
-            renderChart('chart_bp', 'Systolic BP', data.history.bp, data.history.weeks, '#C1483D', 200);
-            renderChart('chart_hb', 'Hemoglobin (Hb)', data.history.hb, data.history.weeks, '#3E6FB0', 20);
-            renderChart('chart_sugar', 'Blood Sugar', data.history.sugar, data.history.weeks, '#E8A33D', 300);
+        // Setup AI Insight toggles
+        currentInsightEn = data.insight_en;
+        currentInsightHi = data.insight_hi;
+        showingHindi = false;
+        
+        document.getElementById('clinical-insight-text').innerText = currentInsightEn;
+        
+        if (currentInsightEn && currentInsightHi) {
+            document.getElementById('lang-toggle-btn').style.display = 'block';
+            document.getElementById('lang-toggle-btn').innerText = "Translate Insight to Hindi";
         }
-    }).catch(err => {
-        document.getElementById('clinical-insight-text').innerText = "Error connecting to backend.";
+        
+        renderCharts(data.history);
+        document.getElementById('chart-wrap').style.display = 'block';
+    })
+    .catch(err => {
+        document.getElementById('patient_title').innerText = "Connection Error";
+        document.getElementById('clinical-insight-text').innerText = "Failed to connect to AI Core.";
     });
-}    
+}
+
+function toggleLanguage() {
+    showingHindi = !showingHindi;
+    const insightBox = document.getElementById('clinical-insight-text');
+    const btn = document.getElementById('lang-toggle-btn');
+    
+    if (showingHindi) {
+        insightBox.innerText = currentInsightHi;
+        btn.innerText = "Translate Insight to English";
+    } else {
+        insightBox.innerText = currentInsightEn;
+        btn.innerText = "Translate Insight to Hindi";
+    }
+}
+
+// ==========================================
+// 7. CHART.JS GRAPH RENDERING
+// ==========================================
+let charts = {};
+function renderCharts(history) {
+    const commonOptions = {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { title: { display: true, text: 'Week', font: {size: 10} } },
+            y: { title: { display: true, font: {size: 10} } }
+        }
+    };
+
+    const createChart = (id, label, data, color) => {
+        const ctx = document.getElementById(id).getContext('2d');
+        if (charts[id]) charts[id].destroy();
+        charts[id] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: history.weeks,
+                datasets: [{
+                    label: label,
+                    data: data,
+                    borderColor: color,
+                    backgroundColor: color + '33',
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 4
+                }]
+            },
+            options: { ...commonOptions, scales: { ...commonOptions.scales, y: { title: { display: true, text: label, font: {size: 10} } } } }
+        });
+    };
+
+    createChart('chart_bp', 'Sys. BP (mmHg)', history.bp, '#d32f2f');
+    createChart('chart_hb', 'Hemoglobin (g/dL)', history.hb, '#1976d2');
+    createChart('chart_sugar', 'Blood Sugar (mg/dL)', history.sugar, '#ed6c02');
+}
