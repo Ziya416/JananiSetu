@@ -8,8 +8,6 @@ import PIL.Image
 import base64
 from io import BytesIO
 from werkzeug.security import generate_password_hash, check_password_hash
-
-
 from google import genai
 from google.genai import types
 
@@ -17,16 +15,16 @@ load_dotenv()
 
 # Initialize Gemini Client
 client = None
-if os.environ.get("GEMINI_API_KEY"):
+if os.environ.get("GEMINI_API_KEY"):  # Your Gemini API Key
     client = genai.Client()
 else:
     print("WARNING: GEMINI_API_KEY not found in environment variables.")
 
-DB_NAME = "jananisetu_simulated.db"
+DB_NAME = "jananisetu_simulated.db"   # Generated patient record's database
 
 app = Flask(__name__, static_folder='public', static_url_path='')
 
-def init_db():
+def init_db():         # If the database is not already generated 
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     c.execute('''
@@ -208,11 +206,13 @@ def search_patient():
         PATIENT DATA: Patient ID: {patient_id}, BP: {bp_val}, Hb: {hb}, Sugar: {sugar}, Comorbidities: {comorbidities}.
         Task 1: Analyze vitals based on standard guidelines.
         Task 2: Generate a concise clinical insight (2-3 sentences) alerting risks.
-        Task 3: Below your insight, explicitly list the vitals exactly as provided.
-        Task 4: Translate the entire response into Hindi.
+        Task 3: In insight first show the alert.
+        Task 4: Below your insight, explicitly list the vitals exactly as provided.
+        Task 5: Translate the entire response into Hindi.
         Format EXACTLY like this:
         ENGLISH:
         [Insight]
+        Alert:
         Last Visit Vitals:
         BP: {bp_val} | Hb: {hb} | Sugar: {sugar}
         Comorbidities: {comorbidities}
