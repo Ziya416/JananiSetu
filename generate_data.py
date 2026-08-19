@@ -89,3 +89,22 @@ for i in range(1, 61):  # Generate 60 patients
 conn.commit()
 conn.close()
 print("🔥 Successfully generated and injected simulated timelines for 60 patients!")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
