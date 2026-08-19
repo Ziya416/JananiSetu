@@ -4,94 +4,114 @@ import sqlite3
 import random
 from datetime import datetime, timedelta
 
-# Connect to the SQLite database
-conn = sqlite3.connect('jananisetu_simulated.db')
-c = conn.cursor()
+DB_NAME = "jananisetu_simulated.db"
 
-# 1. Create the table if it doesn't exist yet
-c.execute('''
-    CREATE TABLE IF NOT EXISTS registry_table (
-        Patient_ID TEXT, Name TEXT, Husband_Name TEXT, Village TEXT,
-        LMP TEXT, EDD TEXT, Obstetric_History TEXT, Visit_Week INTEGER,
-        Blood_Pressure TEXT, Hemoglobin_Hb REAL, Blood_Sugar TEXT,
-        Seizure_History TEXT, HHH_Status TEXT, Comorbidities_Remarks TEXT
-    )
-''')
+FIRST_NAMES = [
+    "Radha", "Sunita", "Priya", "Aarti", "Meena", "Kavita", "Anjali", 
+    "Pooja", "Neha", "Ritu", "Sita", "Geeta", "Rekha", "Kiran", "Mamta"
+]
+LAST_NAMES = [
+    "Devi", "Sharma", "Patel", "Singh", "Verma", 
+    "Gupta", "Das", "Kumari", "Shah", "Desai"
+]
+HUSBAND_NAMES = [
+    "Ramesh", "Suresh", "Amit", "Rahul", "Anil", 
+    "Sunil", "Rajesh", "Vijay", "Sanjay", "Dinesh", "Mahesh"
+]
+VILLAGES = [
+    "Olpad", "Kamrej", "Bardoli", "Mandvi", 
+    "Mangrol", "Palsana", "Mahuva", "Choryasi", "Umarpada"
+]
 
-# 2. Clear existing data so we start fresh
-c.execute('DELETE FROM registry_table')
+def init_db():
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute('DROP TABLE IF EXISTS registry_table')
+    c.execute('''
+        CREATE TABLE registry_table (
+            Patient_ID TEXT, Name TEXT, Husband_Name TEXT, Village TEXT,
+            LMP TEXT, EDD TEXT, Obstetric_History TEXT, Visit_Week INTEGER,
+            Blood_Pressure TEXT, Hemoglobin_Hb REAL, Blood_Sugar TEXT,
+            Seizure_History TEXT, HHH_Status TEXT, Comorbidities_Remarks TEXT
+        )
+    ''')
+    conn.commit()
+    return conn
 
-# Localized demographic data
-first_names = ["Radha", "Sunita", "Kavita", "Priya", "Anjali", "Meera", "Sita", "Gita", "Neha", "Pooja", "Rekha"]
-last_names = ["Patel", "Shah", "Desai", "Rathod", "Parmar", "Solanki", "Chauhan"]
-husbands = ["Shyam", "Ramesh", "Suresh", "Amit", "Rahul", "Vikram", "Sanjay", "Mahesh"]
-villages = ["Surat", "Navsari", "Bardoli", "Vyara", "Kamrej", "Olpad", "Mandvi"]
-
-for i in range(1, 61):  # Generate 60 patients
-    patient_id = f"MOM-{2000 + i}"
-    name = f"{random.choice(first_names)} {random.choice(last_names)}"
-    husband = random.choice(husbands)
-    village = random.choice(villages)
+def seed_data():
+    conn = init_db()
+    c = conn.cursor()
     
-    # Generate realistic pregnancy timelines with use of random and datetime
-    lmp_date = datetime(2025, random.randint(1, 10), random.randint(1, 28))
-    edd_date = lmp_date + timedelta(days=280)
-    lmp = lmp_date.strftime("%d/%m/%Y")
-    edd = edd_date.strftime("%d/%m/%Y")
+    today = datetime.now()
+    records_added = 0
     
-    obs_history = f"G{random.randint(1,3)} P{random.randint(0,2)} A{random.randint(0,1)} L{random.randint(0,2)}"
-    
-    # Injecting real world edge cases 
-    profile = random.choices(["Normal", "Preeclampsia", "GDM", "Anemia"], weights=[70, 10, 10, 10])[0]
-    
-    seizure = "none"
-    hhh = "No"
-    notes = "Routine checkup. Mother feeling normal."
-    
-    if profile == "Preeclampsia":
-        notes = "High risk: Monitor for sudden BP spikes and preeclampsia."
-        seizure = random.choice(["none", "past"])
-    elif profile == "GDM":
-        notes = "Gestational Diabetes flagged in family history."
-    elif profile == "Anemia":
-        notes = "Severe anemia, prescribed iron supplements."
+    for i in range(1, 66):
+        patient_id = f"MOM-{2000 + i}"
+        name = f"{random.choice(FIRST_NAMES)} {random.choice(LAST_NAMES)}"
+        husband = random.choice(HUSBAND_NAMES)
+        village = random.choice(VILLAGES)
         
-    # Generate 3 to 5 historical visits per patient
-    num_visits = random.randint(3, 6)
-    visit_weeks = sorted(random.sample([12, 16, 20, 24, 28, 32, 36, 38, 40], num_visits))
-    
-    for week in visit_weeks:
-        # Baseline normal vitals
-        sys_bp = random.randint(110, 125)
-        dia_bp = random.randint(70, 80)
-        hb = round(random.uniform(11.0, 13.5), 1)
-        sugar = random.randint(80, 100)
+        g = random.randint(1, 4)
+        p = g - 1 if g > 1 else 0
+        obs_hist = f"G{g} P{p} A{random.randint(0, 1) if g > 1 else 0} L{p}"
         
-        # Apply risk profile modifiers
-        if profile == "Preeclampsia" and week >= 24:
-            sys_bp = random.randint(145, 185)
-            dia_bp = random.randint(95, 115)
-        elif profile == "GDM" and week >= 24:
-            sugar = random.randint(140, 210)
-        elif profile == "Anemia":
-            hb = round(random.uniform(7.0, 9.5), 1)
+        weeks_pregnant = random.randint(12, 38)
+        lmp_date = today - timedelta(weeks=weeks_pregnant)
+        edd_date = lmp_date + timedelta(days=280)
+        
+        lmp_str = lmp_date.strftime("%d/%m/%Y")
+        edd_str = edd_date.strftime("%d/%m/%Y")
+        
+        risk_profile = random.choices(
+            ["normal", "anemic", "hypertensive", "emergency"], 
+            weights=[60, 20, 15, 5], k=1
+        )[0]
+        
+        visit_schedule = [w for w in [12, 24, 32, 36] if w <= weeks_pregnant]
+        if not visit_schedule: 
+            visit_schedule = [weeks_pregnant]
             
-        bp_str = f"{sys_bp}/{dia_bp}"
-        
-        # Insert timeline node into database
-        c.execute('''
-            INSERT INTO registry_table 
-            (Patient_ID, Name, Husband_Name, Village, LMP, EDD, Obstetric_History, 
-            Visit_Week, Blood_Pressure, Hemoglobin_Hb, Blood_Sugar, Seizure_History, 
-            HHH_Status, Comorbidities_Remarks)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (patient_id, name, husband, village, lmp, edd, obs_history, 
-              week, bp_str, hb, sugar, seizure, hhh, notes))
+        for week in visit_schedule:
+            sys_bp = random.randint(110, 120)
+            dia_bp = random.randint(70, 80)
+            hb = round(random.uniform(11.0, 13.5), 1)
+            sugar = random.randint(85, 110)
+            seizure = "none"
+            hhh = "No"
+            notes = "Routine checkup normal."
+            
+            if risk_profile == "anemic":
+                hb = round(random.uniform(7.5, 10.0), 1)
+                notes = "Prescribed IFA supplements and dietary monitoring."
+                
+            elif risk_profile == "hypertensive":
+                sys_bp = random.randint(140, 160)
+                dia_bp = random.randint(90, 100)
+                notes = "Elevated BP detected. Regular monitoring required."
+                
+            elif risk_profile == "emergency" and week == visit_schedule[-1]:
+                sys_bp = random.randint(160, 180)
+                dia_bp = random.randint(100, 115)
+                hb = round(random.uniform(6.5, 8.5), 1)
+                seizure = "active"
+                hhh = "Yes"
+                notes = "CRITICAL: Eclampsia symptoms. Immediate referral initiated."
+            
+            bp_str = f"{sys_bp}/{dia_bp}"
+            
+            c.execute('''
+                INSERT INTO registry_table VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (patient_id, name, husband, village, lmp_str, edd_str, obs_hist, 
+                  week, bp_str, hb, str(sugar), seizure, hhh, notes))
+            
+            records_added += 1
+            
+    conn.commit()
+    conn.close()
+    print(f"Generated {records_added} records across 65 patients.")
 
-# Commiting changes and closing the data base connection
-conn.commit()
-conn.close()
-print("🔥 Successfully generated and injected simulated timelines for 60 patients!") # Assurance
+if __name__ == "__main__":
+    seed_data()
 
 
 
