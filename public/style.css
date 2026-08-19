@@ -1,7 +1,7 @@
 :root {
   --ink: #1B2A4A; --ink-soft: #3A4A6B; --cream: #FBF6EF; --cream-deep: #F2E9DA;
   --blush: #F6E1D8; --marigold: #E8A33D; --marigold-deep: #C97F1E; --sage: #5C8566;
-  --sage-bg: #E3EEE2; --amber: #D69A22; --amber-bg: #FBEDD3; --alert: #BD4433;
+  --sage-bg: #E3EEE2; --amber: #D69A22; --amber-bg: #FBEDD3; --alert: #BD4433; 
   --alert-bg: #F9DFD8; --line: #E4D8C6; --white: #FFFFFF;
   --shadow: 0 8px 24px rgba(27,42,74,0.08); --radius: 18px;
 }
