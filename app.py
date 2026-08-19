@@ -1,37 +1,34 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify
 import pandas as pd
 import os
 import re
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator
-import base64
-from io import BytesIO
 from dotenv import load_dotenv
 import sqlite3
+import PIL.Image
+import base64
+from io import BytesIO
+from werkzeug.security import generate_password_hash, check_password_hash
 
-# Import standard Generative AI instead of Vertex AI
-import google.generativeai as genai
+# Use the NEW SDK to fix the warning
+from google import genai
+from google.genai import types
 
 load_dotenv()
-matplotlib.use('Agg')
 
-# 1. Initialize Gemini API
-api_key = os.environ.get("GEMINI_API_KEY")
-if not api_key:
-    print("WARNING: GEMINI_API_KEY not found in environment variables.")
+# Initialize Gemini Client
+client = None
+if os.environ.get("GEMINI_API_KEY"):
+    client = genai.Client()
 else:
-    genai.configure(api_key=api_key)
+    print("WARNING: GEMINI_API_KEY not found in environment variables.")
 
-model = genai.GenerativeModel("gemini-2.5-flash")
-
-# 2. Initialize SQLite Database (Replaces BigQuery)
 DB_NAME = "jananisetu_simulated.db"
+
+app = Flask(__name__, static_folder='public', static_url_path='')
 
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-    # Create the table if it doesn't exist
     c.execute('''
         CREATE TABLE IF NOT EXISTS registry_table (
             Patient_ID TEXT, Name TEXT, Husband_Name TEXT, Village TEXT,
@@ -40,12 +37,19 @@ def init_db():
             Seizure_History TEXT, HHH_Status TEXT, Comorbidities_Remarks TEXT
         )
     ''')
+    # Create the users table for secure login/signup
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            password TEXT,
+            role TEXT
+        )
+    ''')
     conn.commit()
     conn.close()
 
 init_db()
-
-app = Flask(__name__)
 
 EXPECTED_COLUMNS = [
     "Patient_ID", "Name", "Husband_Name", "Village", "LMP", "EDD", 
@@ -55,7 +59,82 @@ EXPECTED_COLUMNS = [
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return app.send_static_file('index.html')
+
+# --- USER AUTHENTICATION ---
+@app.route('/api/signup', methods=['POST'])
+def signup():
+    data = request.json
+    username = data.get("username", "").strip().lower()
+    password = data.get("password", "")
+    role = data.get("role", "phc")
+
+    if not username or not password:
+        return jsonify({"status": "error", "message": "Username and password are required."})
+
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        c = conn.cursor()
+        hashed_pw = generate_password_hash(password)
+        c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", (username, hashed_pw, role))
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success", "message": "Account created successfully."})
+    except sqlite3.IntegrityError:
+        return jsonify({"status": "error", "message": "Username already exists."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.json
+    username = data.get("username", "").strip().lower()
+    password = data.get("password", "")
+
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        c = conn.cursor()
+        c.execute("SELECT password, role FROM users WHERE username = ?", (username,))
+        user = c.fetchone()
+        conn.close()
+
+        if user and check_password_hash(user[0], password):
+            return jsonify({"status": "success", "role": user[1]})
+        else:
+            return jsonify({"status": "error", "message": "Invalid username or password."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
+
+# --- DOCUMENT AI (GEMINI VISION) ---
+@app.route('/api/ocr', methods=['POST'])
+def process_ocr():
+    if not client:
+        return jsonify({"status": "error", "message": "AI Client not configured."})
+        
+    try:
+        data = request.json
+        img_data = base64.b64decode(data['image'].split(',')[1])
+        img = PIL.Image.open(BytesIO(img_data))
+        
+        prompt = """
+        Extract the following maternal health data from this medical report image. 
+        Return ONLY a valid JSON object with these exact keys:
+        "Patient_ID", "Name", "Blood_Pressure", "Hemoglobin_Hb", "Blood_Sugar".
+        If a value is not found, leave the string empty. Do not include markdown formatting.
+        """
+        
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[prompt, img]
+        )
+        
+        raw_json = response.text.replace("```json", "").replace("```", "").strip()
+        import json
+        extracted_data = json.loads(raw_json)
+        return jsonify({"status": "success", "data": extracted_data})
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
 
 @app.route('/api/save', methods=['POST'])
 def save_patient():
@@ -63,15 +142,11 @@ def save_patient():
     try:
         conn = sqlite3.connect(DB_NAME)
         c = conn.cursor()
-        
-        # Prepare data tuple in the correct column order
         values = tuple(data.get(col, "") for col in EXPECTED_COLUMNS)
         placeholders = ",".join(["?"] * len(EXPECTED_COLUMNS))
-        
         c.execute(f"INSERT INTO registry_table VALUES ({placeholders})", values)
         conn.commit()
         conn.close()
-        
         return jsonify({"status": "success", "message": "Saved to Local Database."})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
@@ -84,7 +159,6 @@ def search_patient():
 
     try:
         conn = sqlite3.connect(DB_NAME)
-        # Use pandas read_sql to keep it compatible with your existing graphing code
         query = "SELECT * FROM registry_table WHERE Patient_ID = ?"
         patient_data = pd.read_sql_query(query, conn, params=(patient_id,))
         conn.close()
@@ -94,116 +168,81 @@ def search_patient():
     if patient_data.empty:
         return jsonify({"status": "error", "message": "Patient not found in Database."})
 
-    graph_bp = None
-    graph_hb = None
-    graph_sugar = None
-    
-    try:
-        weeks = patient_data['Visit_Week'].replace("", 0).fillna(0).astype(int).tolist()
-        def extract_num(val, default=0):
-            nums = re.findall(r'\d+', str(val))
-            return int(nums[0]) if nums else default
-
-        plt.figure(figsize=(6, 2.5))
-        vals = [int(str(bp).split('/')[0]) if '/' in str(bp) else extract_num(bp) for bp in patient_data['Blood_Pressure']]
-        plt.plot(weeks, vals, marker='o', color='#C1483D', linewidth=2)
-        plt.title("Systolic BP Trend"); plt.xlabel("Gestational Week"); plt.ylim(0, 200)
-        plt.gca().yaxis.set_major_locator(MultipleLocator(20)); plt.grid(axis='y', linestyle='--', alpha=0.5)
-        buf = BytesIO(); plt.savefig(buf, format='png', bbox_inches='tight'); buf.seek(0); graph_bp = base64.b64encode(buf.getvalue()).decode(); plt.close()
-
-        plt.figure(figsize=(6, 2.5))
-        vals = pd.to_numeric(patient_data['Hemoglobin_Hb'], errors='coerce').fillna(0).tolist()
-        plt.plot(weeks, vals, marker='o', color='#3E6FB0', linewidth=2)
-        plt.title("Hemoglobin (Hb) Trend"); plt.xlabel("Gestational Week"); plt.ylim(0, 20)
-        plt.gca().yaxis.set_major_locator(MultipleLocator(2)); plt.grid(axis='y', linestyle='--', alpha=0.5)
-        buf = BytesIO(); plt.savefig(buf, format='png', bbox_inches='tight'); buf.seek(0); graph_hb = base64.b64encode(buf.getvalue()).decode(); plt.close()
-        
-        plt.figure(figsize=(6, 2.5))
-        vals = [extract_num(s) for s in patient_data['Blood_Sugar']]
-        plt.plot(weeks, vals, marker='o', color='#E8A33D', linewidth=2)
-        plt.title("Blood Sugar Trend"); plt.xlabel("Gestational Week"); plt.ylim(0, 300)
-        plt.gca().yaxis.set_major_locator(MultipleLocator(20)); plt.grid(axis='y', linestyle='--', alpha=0.5)
-        buf = BytesIO(); plt.savefig(buf, format='png', bbox_inches='tight'); buf.seek(0); graph_sugar = base64.b64encode(buf.getvalue()).decode(); plt.close()
-
-    except Exception as e:
-        print(f"Graph error: {e}")
-
-    latest = patient_data.iloc[-1]
+    history = {"weeks": [], "bp": [], "hb": [], "sugar": []}
     
     def extract_num(val, default=0):
         nums = re.findall(r'\d+', str(val))
         return int(nums[0]) if nums else default
+
+    for _, row in patient_data.iterrows():
+        week = extract_num(row.get('Visit_Week', 0))
+        history["weeks"].append(week)
         
+        bp_val = row.get('Blood_Pressure', '')
+        sys_bp = int(str(bp_val).split('/')[0]) if '/' in str(bp_val) else extract_num(bp_val)
+        history["bp"].append(sys_bp)
+        
+        try:
+            hb_val = float(row.get('Hemoglobin_Hb', 0))
+        except:
+            hb_val = 0.0
+        history["hb"].append(hb_val)
+        
+        sugar_val = extract_num(row.get('Blood_Sugar', 0))
+        history["sugar"].append(sugar_val)
+
+    latest = patient_data.iloc[-1]
     bp_val = str(latest.get('Blood_Pressure', '0'))
     try:
         hb = float(latest.get('Hemoglobin_Hb', 0))
     except:
         hb = 0.0
     sugar = extract_num(latest.get('Blood_Sugar', '0'))
-
     comorbidities = str(latest.get('Comorbidities_Remarks', 'None reported'))
-    
-    insight_en = "AI Model not configured. Vitals require manual review."
+
+    insight_en = "AI Model not configured."
     insight_hi = "एआई मॉडल कॉन्फ़िगर नहीं किया गया है।"
 
-    if model:
+    if client:
         prompt = f"""Act as a maternal health orchestrator. 
-        
-        PATIENT DATA:
-        Patient ID: {patient_id}
-        BP: {bp_val}
-        Hb: {hb}
-        Sugar: {sugar}
-        Comorbidities & Remarks: {comorbidities}
-        
-        Task 1: Analyze the vitals based on standard maternal medical guidelines.
-        Task 2: Generate a concise clinical insight (2-3 sentences) alerting the health worker to any risks.
-        Task 3: Below your insight, explicitly list the vitals and comorbidities EXACTLY as provided in the PATIENT DATA above. Use paragraph spacing.
-        Task 4: Translate the ENTIRE English response (including the vitals and comorbidities list) into Hindi.
-        
-        Format your response EXACTLY like this, with no extra text or markdown:
-        ENGLISH: 
-        [Your clinical insight here]
-        
+        PATIENT DATA: Patient ID: {patient_id}, BP: {bp_val}, Hb: {hb}, Sugar: {sugar}, Comorbidities: {comorbidities}.
+        Task 1: Analyze vitals based on standard guidelines.
+        Task 2: Generate a concise clinical insight (2-3 sentences) alerting risks.
+        Task 3: Below your insight, explicitly list the vitals exactly as provided.
+        Task 4: Translate the entire response into Hindi.
+        Format EXACTLY like this:
+        ENGLISH:
+        [Insight]
         Last Visit Vitals:
-        BP: {bp_val}
-        Hb: {hb}
-        Sugar: {sugar}
-        
-        Comorbidities & Remarks:
-        {comorbidities}
-        
-        HINDI: 
-        [Hindi translation of the clinical insight]
-        
+        BP: {bp_val} | Hb: {hb} | Sugar: {sugar}
+        Comorbidities: {comorbidities}
+        HINDI:
+        [Hindi Insight]
         अंतिम विज़िट के वाइटल्स:
-        BP: {bp_val}
-        Hb: {hb}
-        Sugar: {sugar}
-        
-        सहवर्ती रोग और टिप्पणियाँ:
-        [Hindi translation of the Comorbidities & Remarks here]"""
+        BP: {bp_val} | Hb: {hb} | Sugar: {sugar}
+        सहवर्ती रोग: [Hindi Comorbidities]"""
 
         try:
-            # Standard Gemini API safety settings syntax
-            safety_settings = [
-                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"}
-            ]
-            
-            response = model.generate_content(prompt, safety_settings=safety_settings)
+            config = types.GenerateContentConfig(
+                safety_settings=[
+                    types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
+                ]
+            )
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt,
+                config=config
+            )
             raw_text = response.text
-            
             if "HINDI:" in raw_text:
                 parts = raw_text.split("HINDI:")
                 insight_en = parts[0].replace("ENGLISH:", "").strip()
                 insight_hi = parts[1].strip()
             else:
                 insight_en = raw_text
-                insight_hi = "Translation error."
-                
         except Exception as e:
             print(f"LLM Error: {e}")
             insight_en = f"SYSTEM ERROR: {str(e)}"
@@ -211,9 +250,7 @@ def search_patient():
 
     return jsonify({
         "status": "success",
-        "graph_bp": graph_bp,
-        "graph_hb": graph_hb,
-        "graph_sugar": graph_sugar,
+        "history": history,
         "insight_en": insight_en,
         "insight_hi": insight_hi
     })
@@ -222,25 +259,24 @@ def search_patient():
 def search_demographic():
     name = request.args.get('name', '').strip()
     village = request.args.get('village', '').strip()
-    
     if not name or not village:
         return jsonify({"status": "error", "message": "Name and Village are required."})
-
+    
     try:
         conn = sqlite3.connect(DB_NAME)
-        query = "SELECT Patient_ID FROM registry_table WHERE LOWER(Name) = LOWER(?) AND LOWER(Village) = LOWER(?) LIMIT 1"
-        result = pd.read_sql_query(query, conn, params=(name, village))
+        query = "SELECT Patient_ID FROM registry_table WHERE LOWER(Name) LIKE LOWER(?) AND LOWER(Village) = LOWER(?) LIMIT 1"
+        result = pd.read_sql_query(query, conn, params=(f"%{name}%", village))
         conn.close()
         
         if result.empty:
-            return jsonify({"status": "error", "message": "No patient found with this name and village."})
-            
-        matched_id = str(result.iloc[0]['Patient_ID'])
-        return jsonify({"status": "success", "patient_id": matched_id})
-        
+            return jsonify({"status": "error", "message": "No patient found."})
+        return jsonify({"status": "success", "patient_id": str(result.iloc[0]['Patient_ID'])})
     except Exception as e:
         return jsonify({"status": "error", "message": f"Database search failed: {e}"})
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
+    print("=========================================")
+    print(f"Flask Server running at http://localhost:{port}")
+    print("=========================================")
     app.run(host='0.0.0.0', port=port, debug=True)
