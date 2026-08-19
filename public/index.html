@@ -11,24 +11,68 @@
     <!-- Include Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body>   
+
+<!-- AUTH OVERLAY (LOGIN / SIGNUP) -->
+<div id="loginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:var(--cream); z-index:9999; display:flex; align-items:center; justify-content:center;">
+    <div class="card" style="max-width: 400px; width: 100%; text-align: center; box-shadow: var(--shadow); padding: 30px;">
+        <div class="brand-mark" style="margin: 0 auto 15px; width: 64px; height: 64px;">
+            <img src="logo.png" alt="JananiSetu Logo" style="width:100%; height:100%; object-fit:cover; border-radius:16px;">
+        </div>
+        
+        <h2 id="authTitle" style="margin-bottom: 20px; font-family: 'Fraunces', serif;">Login to JananiSetu</h2>
+
+        <div class="field" style="text-align: left; margin-bottom: 15px;">
+            <input type="text" id="authUsername" placeholder="Username">
+        </div>
+
+        <div class="field" style="text-align: left; margin-bottom: 15px;">
+            <div class="password-wrapper">
+                <input type="password" id="authPassword" placeholder="Password">
+                <button type="button" class="toggle-password" onclick="togglePasswordVisibility('authPassword', this)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Role Selection (Hidden during Login, visible during Signup) -->
+        <div class="field" id="roleSelection" style="display: none; text-align: left; margin-bottom: 15px;">
+            <label style="font-size: 13px; font-weight: 600; margin-bottom: 5px; display: block;">Select Facility Level</label>
+            <select id="authRole">
+                <option value="phc">PHC (Primary Health Centre)</option>
+                <option value="chc">CHC (Community Health Centre)</option>
+                <option value="institutional">Institutional Worker (Delivery Room)</option>
+            </select>
+        </div>
+
+        <!-- Login / Action Button -->
+        <button id="authActionBtn" style="width: 100%; padding: 13px 14px; border-radius: 12px; font-size: 15.5px; font-family: 'IBM Plex Mono', monospace; font-weight: 500; background: #000; color: #fff; border: none; margin-top: 15px; cursor: pointer;" onclick="handleAuth()">Login</button>
+        
+        <!-- Toggle Sign Up / Login Button -->
+        <p class="auth-toggle-text" onclick="toggleAuthMode()" id="authToggleHint">Don't have an account? Sign up</p>
+    </div>
+</div>
+
 <div class="app">
-    <div class="topbar">
-        <div class="brand">
-            <div class="brand-mark">
-                <img src="logo.png" alt="JananiSetu Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+    <!-- RESTORED TOP HEADER -->
+    <header class="header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px;">
+        <div class="brand" style="display:flex; align-items:center; gap:14px;">
+            <div class="brand-mark" style="width:48px; height:48px;">
+                <img src="logo.png" alt="JananiSetu Logo" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">
             </div>
             <div>
-                <div class="brand-word">JananiSetu</div>
-                <div class="brand-tag" data-translate="tagline">A Bridge between Hope to Life</div>
+                <h1 style="font-family:'Fraunces',serif; font-size:24px; margin:0; line-height:1.1;">JananiSetu</h1>
+                <p style="margin:2px 0 0; font-size:13px; color:var(--ink-soft); letter-spacing:0.3px;">A Bridge between Hope to Life</p>
             </div>
         </div>
-        <div class="lang-toggle" role="group" aria-label="Language">
-            <button class="active" onclick="toggleLang('en', this)">English</button>
-            <button onclick="toggleLang('hi', this)">हिंदी</button>
-        </div>
-    </div>
+        <!-- Language Toggle managed purely by your CSS -->
+        <div class="lang-toggle">
+            <button class="active" onclick="toggleLang('en', this)">ENG</button>
+            <button onclick="toggleLang('hi', this)">HINDI</button>
+        </div> 
+    </header>
 
+    <!-- BANNER -->
     <div class="welcome" id="welcomeBanner">
         <div class="welcome-text">
             <h1 data-translate="welcome_title">New here? Let's take a 20-second look around.</h1>
@@ -39,6 +83,7 @@
         </button>
     </div>
 
+    <!-- JOURNEY NAVIGATION -->
     <nav class="journey">
         <div class="journey-line"></div>
         <button class="station active" data-panel="p1" onclick="goTo('p1')">
@@ -60,6 +105,7 @@
         </button>
     </nav>
 
+    <!-- PANEL 1: VILLAGE CHECK-IN -->
     <section class="panel active" id="p1">
         <div class="panel-head">
             <div class="eyebrow" data-translate="p1_eyebrow">Agent 2 · Smart Ingestion</div>
@@ -70,7 +116,7 @@
         <div class="grid">
             <div class="card">
                 <div class="lookup" id="entryToggleGroup">
-                    <button class="active" onclick="setEntryMode('ocr', this)" data-translate="btn_ocr">Upload ID/Report (OCR)</button>
+                    <button class="active" onclick="setEntryMode('ocr', this)" data-translate="btn_ocr">Upload ID/Report (Document AI)</button>
                     <button onclick="setEntryMode('manual', this)" data-translate="btn_manual">Enter Manually</button>
                 </div>
                 
@@ -81,7 +127,6 @@
                 </div>
 
                 <div id="manualEntryZone" style="display:none;">
-                    <!-- Manual Entry Fields -->
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                         <div class="field"><label>Patient_ID</label><input type="text" id="man_id" placeholder="e.g. MOM-2291"></div>
                         <div class="field"><label>Patient Name</label><input type="text" id="man_name" placeholder="e.g. Radha Devi"></div>
@@ -133,6 +178,7 @@
         </div>
     </section>
 
+    <!-- PANEL 2: DELIVERY ROOM -->
     <section class="panel" id="p2">
         <div class="panel-head">
             <div class="eyebrow" data-translate="p2_eyebrow">Agent 4 · Emergency Searcher</div>
@@ -166,6 +212,7 @@
                     <input type="text" id="demo_village" placeholder="Village / Location" style="margin-bottom: 15px;">
                     <button class="btn-primary" style="width: auto; margin: 0 auto; padding: 10px 24px;" onclick="searchByDemographics()" data-translate="btn_search_rec">Search Records</button>
                 </div>
+            </div>
 
             <div id="briefingBox" style="display:none; margin-top:30px; border-top: 2px dashed var(--line); padding-top: 20px;">
                 <h3 id="patient_title">Executive Labor Briefing</h3>
@@ -190,8 +237,9 @@
         </div>
     </section>
 
-    <footer data-translate="footer">Built for ANMs and front-line health workers · JananiSetu</footer>
+    <footer data-translate="footer">Built for front-line health workers · JananiSetu</footer>
 </div>
+
 <script src="script.js"></script>
 </body>
 </html>
