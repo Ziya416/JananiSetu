@@ -8,36 +8,42 @@ from matplotlib.ticker import MultipleLocator
 import base64
 from io import BytesIO
 from dotenv import load_dotenv
-import json
-from google.oauth2 import service_account
-from google.cloud import bigquery
+import sqlite3
 
-# Import Vertex AI instead of standard generativeai
-import vertexai
-from vertexai.generative_models import GenerativeModel, HarmCategory, HarmBlockThreshold
+# Import standard Generative AI instead of Vertex AI
+import google.generativeai as genai
 
 load_dotenv()
 matplotlib.use('Agg')
 
-# Cloud Run native credential setup for BigQuery and Vertex AI
-json_creds = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
-if json_creds:
-    creds_dict = json.loads(json_creds)
-    creds = service_account.Credentials.from_service_account_info(creds_dict)
-    
-    # Initialize BigQuery
-    bq_client = bigquery.Client(credentials=creds, project=creds_dict["project_id"])
-    
-    # Initialize Vertex AI using the same credentials and project
-    vertexai.init(project=creds_dict["project_id"], location="us-central1", credentials=creds)
-    model = GenerativeModel("gemini-2.5-flash")
-    BQ_AVAILABLE = True
+# 1. Initialize Gemini API
+api_key = os.environ.get("GEMINI_API_KEY")
+if not api_key:
+    print("WARNING: GEMINI_API_KEY not found in environment variables.")
 else:
-    # Local fallback
-    bq_client = bigquery.Client(location="asia-south1")
-    vertexai.init(project="big-query-codelab-497213", location="us-central1")
-    model = GenerativeModel("gemini-2.5-flash")
-    BQ_AVAILABLE = True
+    genai.configure(api_key=api_key)
+
+model = genai.GenerativeModel("gemini-2.5-flash")
+
+# 2. Initialize SQLite Database (Replaces BigQuery)
+DB_NAME = "jananisetu_simulated.db"
+
+def init_db():
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    # Create the table if it doesn't exist
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS registry_table (
+            Patient_ID TEXT, Name TEXT, Husband_Name TEXT, Village TEXT,
+            LMP TEXT, EDD TEXT, Obstetric_History TEXT, Visit_Week INTEGER,
+            Blood_Pressure TEXT, Hemoglobin_Hb REAL, Blood_Sugar TEXT,
+            Seizure_History TEXT, HHH_Status TEXT, Comorbidities_Remarks TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+init_db()
 
 app = Flask(__name__)
 
@@ -55,14 +61,18 @@ def home():
 def save_patient():
     data = request.json
     try:
-        row_to_insert = {col: data.get(col, "") for col in EXPECTED_COLUMNS}
-        table_id = "big-query-codelab-497213.maternal_health_data.registry-table"
-        errors = bq_client.insert_rows_json(table_id, [row_to_insert])
+        conn = sqlite3.connect(DB_NAME)
+        c = conn.cursor()
         
-        if errors == []:
-            return jsonify({"status": "success", "message": "Saved to BigQuery."})
-        else:
-            return jsonify({"status": "error", "message": f"BigQuery errors: {errors}"})
+        # Prepare data tuple in the correct column order
+        values = tuple(data.get(col, "") for col in EXPECTED_COLUMNS)
+        placeholders = ",".join(["?"] * len(EXPECTED_COLUMNS))
+        
+        c.execute(f"INSERT INTO registry_table VALUES ({placeholders})", values)
+        conn.commit()
+        conn.close()
+        
+        return jsonify({"status": "success", "message": "Saved to Local Database."})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
@@ -73,23 +83,23 @@ def search_patient():
         return jsonify({"status": "error", "message": "Patient ID required"})
 
     try:
-        query = f"""
-            SELECT * FROM `big-query-codelab-497213.maternal_health_data.registry-table` 
-            WHERE CAST(Patient_ID AS STRING) = '{patient_id}'
-        """
-        patient_data = bq_client.query(query).to_dataframe()
+        conn = sqlite3.connect(DB_NAME)
+        # Use pandas read_sql to keep it compatible with your existing graphing code
+        query = "SELECT * FROM registry_table WHERE Patient_ID = ?"
+        patient_data = pd.read_sql_query(query, conn, params=(patient_id,))
+        conn.close()
     except Exception as e:
         return jsonify({"status": "error", "message": f"Database search failed: {e}"})
 
     if patient_data.empty:
-        return jsonify({"status": "error", "message": "Patient not found in BigQuery."})
+        return jsonify({"status": "error", "message": "Patient not found in Database."})
 
     graph_bp = None
     graph_hb = None
     graph_sugar = None
     
     try:
-        weeks = patient_data['Visit_Week'].fillna(0).astype(int).tolist()
+        weeks = patient_data['Visit_Week'].replace("", 0).fillna(0).astype(int).tolist()
         def extract_num(val, default=0):
             nums = re.findall(r'\d+', str(val))
             return int(nums[0]) if nums else default
@@ -175,13 +185,13 @@ def search_patient():
         [Hindi translation of the Comorbidities & Remarks here]"""
 
         try:
-            # Vertex AI specific safety settings syntax
-            safety_settings = {
-                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-            }
+            # Standard Gemini API safety settings syntax
+            safety_settings = [
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"}
+            ]
             
             response = model.generate_content(prompt, safety_settings=safety_settings)
             raw_text = response.text
@@ -217,13 +227,10 @@ def search_demographic():
         return jsonify({"status": "error", "message": "Name and Village are required."})
 
     try:
-        # Query BigQuery for a matching patient
-        query = f"""
-            SELECT Patient_ID FROM `big-query-codelab-497213.maternal_health_data.registry-table` 
-            WHERE LOWER(Name) = LOWER('{name}') AND LOWER(Village) = LOWER('{village}')
-            LIMIT 1
-        """
-        result = bq_client.query(query).to_dataframe()
+        conn = sqlite3.connect(DB_NAME)
+        query = "SELECT Patient_ID FROM registry_table WHERE LOWER(Name) = LOWER(?) AND LOWER(Village) = LOWER(?) LIMIT 1"
+        result = pd.read_sql_query(query, conn, params=(name, village))
+        conn.close()
         
         if result.empty:
             return jsonify({"status": "error", "message": "No patient found with this name and village."})
@@ -236,4 +243,4 @@ def search_demographic():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=True)

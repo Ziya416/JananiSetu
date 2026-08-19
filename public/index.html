@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JananiSetu: A Bridge between Hope to Life</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Include Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="app">
+    <div class="topbar">
+        <div class="brand">
+            <div class="brand-mark">
+                <img src="logo.png" alt="JananiSetu Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+            </div>
+            <div>
+                <div class="brand-word">JananiSetu</div>
+                <div class="brand-tag" data-translate="tagline">A Bridge between Hope to Life</div>
+            </div>
+        </div>
+        <div class="lang-toggle" role="group" aria-label="Language">
+            <button class="active" onclick="toggleLang('en', this)">English</button>
+            <button onclick="toggleLang('hi', this)">हिंदी</button>
+        </div>
+    </div>
+
+    <div class="welcome" id="welcomeBanner">
+        <div class="welcome-text">
+            <h1 data-translate="welcome_title">New here? Let's take a 20-second look around.</h1>
+            <p data-translate="welcome_desc">Two stops, one journey: enter check-up numbers to log data securely, and hand doctors a ready-made briefing with full AI insights and trend graphs the moment a mother reaches the hospital.</p>
+        </div>
+        <button class="welcome-cta" onclick="dismissWelcome()">
+            <span data-translate="welcome_btn">Got it, let's start</span>
+        </button>
+    </div>
+
+    <nav class="journey">
+        <div class="journey-line"></div>
+        <button class="station active" data-panel="p1" onclick="goTo('p1')">
+            <span class="station-num">1</span>
+            <div class="station-dot">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            </div>
+            <div class="station-label" data-translate="nav_village">Village Check-In</div>
+            <div class="station-sub" data-translate="nav_village_sub">Enter today's vitals</div>
+        </button>
+        
+        <button class="station" data-panel="p2" onclick="goTo('p2')">
+            <span class="station-num">2</span>
+            <div class="station-dot">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6l-8-4z"/><path d="M12 8v5M12 16h.01"/></svg>
+            </div>
+            <div class="station-label" data-translate="nav_delivery">Delivery Room</div>
+            <div class="station-sub" data-translate="nav_delivery_sub">Emergency Retrieval Gateway</div>
+        </button>
+    </nav>
+
+    <section class="panel active" id="p1">
+        <div class="panel-head">
+            <div class="eyebrow" data-translate="p1_eyebrow">Agent 2 · Smart Ingestion</div>
+            <h2 data-translate="p1_title">Upload report or enter data manually.</h2>
+            <p data-translate="p1_desc">Upload a photo of the medical report, and we will extract the data. Anything missing? You can fill the gaps below.</p>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <div class="lookup" id="entryToggleGroup">
+                    <button class="active" onclick="setEntryMode('ocr', this)" data-translate="btn_ocr">Upload ID/Report (OCR)</button>
+                    <button onclick="setEntryMode('manual', this)" data-translate="btn_manual">Enter Manually</button>
+                </div>
+                
+                <div id="uploadZone" class="field" style="border: 2px dashed var(--line); padding: 40px 20px; text-align: center; border-radius: var(--radius); background: var(--cream);">
+                    <p style="margin:0 0 15px; font-weight:600; color:var(--ink-soft);" data-translate="upload_hint">Take a picture of the ID or browse for an image.</p>
+                    <input type="file" id="ocrInput" accept="image/png, image/jpeg, image/jpg" capture="environment" onchange="handleImageSelect(this)" style="background:var(--white); cursor:pointer;">
+                    <button id="processBtn" class="btn-primary" style="display:none; margin-top: 20px; width: 60%; margin-left: auto; margin-right: auto;" onclick="processOCR()" data-translate="btn_process">Process Document</button>
+                </div>
+
+                <div id="manualEntryZone" style="display:none;">
+                    <!-- Manual Entry Fields -->
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                        <div class="field"><label>Patient_ID</label><input type="text" id="man_id" placeholder="e.g. MOM-2291"></div>
+                        <div class="field"><label>Patient Name</label><input type="text" id="man_name" placeholder="e.g. Radha Devi"></div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                        <div class="field"><label>Husband's Name</label><input type="text" id="man_husband" placeholder="e.g. Shyam"></div>
+                        <div class="field"><label>Village / Location</label><input type="text" id="man_village" placeholder="e.g. Surat"></div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                        <div class="field"><label>Visit_Week</label><input type="number" id="man_week" placeholder="e.g. 24" min="1" max="42"></div>
+                        <div class="field"><label>LMP (Date)</label><input type="text" id="man_lmp" placeholder="dd/mm/yyyy"></div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                        <div class="field"><label>EDD (Date)</label><input type="text" id="man_edd" placeholder="dd/mm/yyyy"></div>
+                        <div class="field"><label>Obstetric_History</label><input type="text" id="man_obs" placeholder="e.g. G3 P1 A1 L1"></div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                        <div class="field"><label>Blood_Pressure</label><input type="text" id="man_bp" placeholder="e.g. 120/80"></div>
+                        <div class="field"><label>Hemoglobin_Hb</label><input type="number" id="man_hb" step="0.1" placeholder="e.g. 11.2"></div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                        <div class="field"><label>Blood_Sugar</label><input type="text" id="man_sugar" placeholder="e.g. 90"></div>
+                        <div class="field">
+                            <label>Seizure_History</label>
+                            <select id="man_seizure">
+                                <option value="none">No History</option>
+                                <option value="past">Yes - Past History</option>
+                                <option value="active">Yes - Active Risk</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                        <div class="field">
+                            <label>HHH Status</label>
+                            <select id="man_hhh">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Comorbidities_&_Remarks</label>
+                            <textarea id="man_notes" rows="1" placeholder="Additional notes..."></textarea>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary" onclick="savePatientData()" data-translate="btn_save">Save Data</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel" id="p2">
+        <div class="panel-head">
+            <div class="eyebrow" data-translate="p2_eyebrow">Agent 4 · Emergency Searcher</div>
+            <h2 data-translate="p2_title">Emergency Retrieval Gateway</h2>
+            <p data-translate="p2_desc">Select an option below to securely pull the patient's medical history when they arrive at the delivery room.</p>
+        </div>
+        
+        <div class="card">
+            <div class="lookup" id="identityToggleGroup">
+                <button class="active" onclick="showIdentityMethod('scan', this)" data-translate="tab_scan">📷 Scan Card</button>
+                <button onclick="showIdentityMethod('manual', this)" data-translate="tab_manual">🔢 Manual ID</button>
+                <button onclick="showIdentityMethod('demo', this)" data-translate="tab_demo">🔍 Demographic Search</button>
+            </div>
+            
+            <div id="identityForm" style="margin-top:20px; padding: 20px; background: var(--cream); border-radius: 12px; border: 1px solid var(--line);">
+                
+                <div id="scannerZone" style="text-align:center;">
+                    <p style="margin: 0 0 15px; font-weight:600;" data-translate="scan_hint">Point camera to scan the physical Card.</p>
+                    <button class="btn-primary" style="width: auto; margin: 0 auto; padding: 10px 24px;" onclick="alert('Camera module requires HTTPS to initialize.')" data-translate="btn_open_scan">Open Camera Scanner</button>
+                </div>
+
+                <div id="manualSearchZone" style="display:none; text-align:center;">
+                    <p style="margin: 0 0 15px; font-weight:600;" data-translate="man_hint">Enter the Patient ID manually.</p>
+                    <input type="text" id="search_id" placeholder="Enter Patient ID (e.g. MOM-2291)" style="margin-bottom: 15px;">
+                    <button class="btn-primary" style="width: auto; margin: 0 auto; padding: 10px 24px;" onclick="simulateSearch()" data-translate="btn_search">Search Database</button>
+                </div>
+
+                <div id="demoSearchZone" style="display:none; text-align:center;">
+                    <p style="margin: 0 0 15px; font-weight:600;" data-translate="demo_hint">Search by Patient Name and Village.</p>
+                    <input type="text" id="demo_name" placeholder="Patient Name" style="margin-bottom: 10px;">
+                    <input type="text" id="demo_village" placeholder="Village / Location" style="margin-bottom: 15px;">
+                    <button class="btn-primary" style="width: auto; margin: 0 auto; padding: 10px 24px;" onclick="searchByDemographics()" data-translate="btn_search_rec">Search Records</button>
+                </div>
+
+            <div id="briefingBox" style="display:none; margin-top:30px; border-top: 2px dashed var(--line); padding-top: 20px;">
+                <h3 id="patient_title">Executive Labor Briefing</h3>
+                
+                <h4 style="margin-bottom: 10px; margin-top: 25px;" data-translate="insight_head">Agent 3 · AI Clinical Insights</h4>
+                <div class="insight-container">
+                    <div id="clinical-insight-text" style="padding: 15px; background: var(--blush); border-radius: 12px; white-space: pre-wrap; font-size: 14.5px; line-height: 1.5; color: var(--ink);">Awaiting AI Analysis...</div>
+                    <button id="lang-toggle-btn" class="btn-primary" onclick="toggleLanguage()" style="display: none; margin-top: 15px; width: auto; padding: 10px 24px; font-size: 14px;">
+                        Translate to Hindi
+                    </button>
+                </div>
+
+                <div class="chart-wrap" id="chart-wrap" style="display: none;">
+                    <h4 style="margin-bottom: 10px;" data-translate="chart_title">42-Week Vitals Trend</h4>
+                    <div class="graph-grid" id="graph-container">
+                        <canvas id="chart_bp"></canvas>
+                        <canvas id="chart_hb"></canvas>
+                        <canvas id="chart_sugar"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer data-translate="footer">Built for ANMs and front-line health workers · JananiSetu</footer>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
