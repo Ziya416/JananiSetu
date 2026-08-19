@@ -13,5 +13,10 @@ JananiSetu is an intelligent maternal health system designed to support frontlin
 - Data Infrastructure : Google BigQuery
 - Deployment : Google Cloud Platform
 
-
+# 🚀 What's New in v2.0 (Simulated Real-World Environment)
+JananiSetu has been upgraded from a proof-of-concept to a simulated production environment:
+* **Architecture Shift:** Migrated from a Python/Flask & GCP Vertex AI backend to a lightweight **Node.js & Express** architecture.
+* **Synthetic Data Pipeline:** Integrated a custom Python generator creating 50+ realistic 42-week patient timelines, including injected high-risk edge cases (Preeclampsia, Gestational Diabetes, Anemia).
+* **Interactive Analytics:** Replaced static image generation with dynamic, interactive frontend charts using **Chart.js**.
+* **Zero-Cloud Dependency:** Replaced BigQuery with a local SQLite database for seamless, zero-cost deployment.
 
