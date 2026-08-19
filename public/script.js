@@ -3,6 +3,64 @@ let savedInsightEn = '';
 let savedInsightHi = '';
 let chartInstances = {}; // Keep track of charts so we can destroy them on new searches
 
+let isSignupMode = false;
+
+function toggleAuthMode() {
+    isSignupMode = !isSignupMode;
+    document.getElementById('authTitle').innerText = isSignupMode ? "Create an Account" : "Login to JananiSetu";
+    document.getElementById('authActionBtn').innerText = isSignupMode ? "Sign Up" : "Login";
+    document.getElementById('authToggleHint').innerText = isSignupMode ? "Already have an account? Login" : "Don't have an account? Sign up";
+    document.getElementById('roleSelection').style.display = isSignupMode ? "block" : "none";
+}
+
+function togglePasswordVisibility(inputId, btnElement) {
+    const input = document.getElementById(inputId);
+    if (input.type === "password") {
+        input.type = "text";
+        btnElement.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>'; 
+    } else {
+        input.type = "password";
+        btnElement.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>'; 
+    }
+}
+
+function handleAuth() {
+    const user = document.getElementById('authUsername').value;
+    const pass = document.getElementById('authPassword').value;
+    const role = document.getElementById('authRole').value;
+    const endpoint = isSignupMode ? '/api/signup' : '/api/login';
+    const payload = isSignupMode ? { username: user, password: pass, role: role } : { username: user, password: pass };
+
+    fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            if (isSignupMode) {
+                alert("Account created successfully! Please login with your credentials.");
+                document.getElementById('authPassword').value = '';
+                toggleAuthMode(); 
+            } else {
+                document.getElementById('loginOverlay').style.display = 'none';      // Successful Login: Dismiss overlay and unlock full platform for everyone
+                
+                let roleName = "Health Worker";
+                if (data.role === 'phc') roleName = "PHC Worker";
+                if (data.role === 'chc') roleName = "CHC Worker";
+                if (data.role === 'institutional') roleName = "Institutional Worker";
+
+                alert(`Welcome! Logged in as ${roleName}. Accessing full platform.`);
+                document.querySelectorAll('.station').forEach(s => s.style.display = 'flex');                // Ensuring both stations are visible to everyone
+                goTo('p1');
+            }
+        } else {
+            alert(data.message);
+        }
+    });
+}
+
 function toggleLanguage() {
     const textElement = document.getElementById("clinical-insight-text");
     const btn = document.getElementById("lang-toggle-btn");
@@ -19,7 +77,6 @@ function toggleLanguage() {
 }
 
 const translations = {
-    // ... (Keep all your existing translation keys here, omitted for brevity)
     welcome_title: { en: "New here? Let's take a 20-second look around.", hi: "यहाँ नए हैं? आइए 20 सेकंड में चारों ओर देखें।" }
 };
 
@@ -64,18 +121,54 @@ function showIdentityMethod(type, btn) {
     document.getElementById('demoSearchZone').style.display = type === 'demo' ? 'block' : 'none';
 }
 
+let uploadedImageBase64 = "";
+
 function handleImageSelect(input) {
-    if (input.files && input.files[0]) document.getElementById('processBtn').style.display = 'block';
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            uploadedImageBase64 = e.target.result; // Save the base64 string for the API call
+            document.getElementById('processBtn').style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
 }
 
 function processOCR() {
     const btn = document.getElementById('processBtn');
-    btn.innerText = "Analyzing Document...";
-    setTimeout(() => {
-        alert("OCR Complete! Switch to manual to verify details.");
+    if (!uploadedImageBase64) {
+        return alert("Please select an image first.");
+    }
+    
+    btn.innerText = "Analyzing Document with AI...";
+    fetch('/api/ocr', {                  // Call the real Gemini Vision endpoint in app.py
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: uploadedImageBase64 })
+    })
+    .then(res => res.json())
+    .then(data => {
         btn.innerText = "Process Document";
-        setEntryMode('manual', document.querySelectorAll('#entryToggleGroup button')[1]);
-    }, 1200);
+        
+        if (data.status === "success" && data.data) {
+            // Autofill the manual entry form with the AI extracted data
+            if(data.data.Patient_ID) document.getElementById('man_id').value = data.data.Patient_ID;
+            if(data.data.Name) document.getElementById('man_name').value = data.data.Name;
+            if(data.data.Blood_Pressure) document.getElementById('man_bp').value = data.data.Blood_Pressure;
+            if(data.data.Hemoglobin_Hb) document.getElementById('man_hb').value = data.data.Hemoglobin_Hb;
+            if(data.data.Blood_Sugar) document.getElementById('man_sugar').value = data.data.Blood_Sugar;
+            
+            alert("Document AI extraction complete! Please verify the details.");
+            
+            setEntryMode('manual', document.querySelectorAll('#entryToggleGroup button')[1]);  // Automatically switch the UI to manual mode so the user can see the filled data
+        } else {
+            alert("Error: " + (data.message || "Failed to parse document."));
+        }
+    })
+    .catch(err => {
+        btn.innerText = "Process Document";
+        alert("Connection error during OCR.");
+    });
 }
 
 function savePatientData() {
@@ -97,7 +190,6 @@ function savePatientData() {
     };
 
     if (!payload.Patient_ID || !payload.Visit_Week) return alert("Patient ID and Visit Week are required!");
-
     fetch('/api/save', { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
@@ -126,7 +218,6 @@ async function searchByDemographics() {
 function renderChart(canvasId, label, dataArray, labelsArray, color, maxVal) {
     const ctx = document.getElementById(canvasId).getContext('2d');
     if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
-
     chartInstances[canvasId] = new Chart(ctx, {
         type: 'line',
         data: {
@@ -155,12 +246,11 @@ function renderChart(canvasId, label, dataArray, labelsArray, color, maxVal) {
 function simulateSearch() {
     const input = document.getElementById('search_id');
     if (!input || input.value.trim() === "") return alert("Please enter a Patient ID.");
-
     document.getElementById('briefingBox').style.display = 'block';
     document.getElementById('clinical-insight-text').innerText = "Agent 3 is analyzing database...";
     const chartWrap = document.getElementById('chart-wrap');
-    if (chartWrap) chartWrap.style.display = 'none';
 
+    if (chartWrap) chartWrap.style.display = 'none';
     fetch('/api/search?patient_id=' + input.value)
     .then(res => res.json())
     .then(data => {
@@ -181,8 +271,6 @@ function simulateSearch() {
 
         if (chartWrap && data.history) {
             chartWrap.style.display = 'block'; 
-            
-            // Generate beautiful frontend charts
             renderChart('chart_bp', 'Systolic BP', data.history.bp, data.history.weeks, '#C1483D', 200);
             renderChart('chart_hb', 'Hemoglobin (Hb)', data.history.hb, data.history.weeks, '#3E6FB0', 20);
             renderChart('chart_sugar', 'Blood Sugar', data.history.sugar, data.history.weeks, '#E8A33D', 300);
@@ -190,4 +278,4 @@ function simulateSearch() {
     }).catch(err => {
         document.getElementById('clinical-insight-text').innerText = "Error connecting to backend.";
     });
-}
+}    
