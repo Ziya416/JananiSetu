@@ -61,24 +61,90 @@ function handleAuth() {
     });
 }
 
-function toggleLanguage() {
-    const textElement = document.getElementById("clinical-insight-text");
-    const btn = document.getElementById("lang-toggle-btn");
-    
-    if (currentLang === 'en') {
-        textElement.innerText = savedInsightHi;
-        btn.innerText = "View in English";
-        currentLang = 'hi';
-    } else {
-        textElement.innerText = savedInsightEn;
-        btn.innerText = "Translate to Hindi";
-        currentLang = 'en';
-    }
-}
-
+// --- JSON TRANSLATION DICTIONARY ---
 const translations = {
-    welcome_title: { en: "New here? Let's take a 20-second look around.", hi: "यहाँ नए हैं? आइए 20 सेकंड में चारों ओर देखें।" }
+    "en": {
+        "welcome_title": "New here? Let's take a 20-second look around.",
+        "welcome_desc": "Two stops, one journey: enter check-up numbers to log data securely, and hand doctors a ready-made briefing with full AI insights and trend graphs the moment a mother reaches the hospital.",
+        "welcome_btn": "Got it, let's start",
+        "nav_village": "Village Check-In",
+        "nav_village_sub": "Enter today's vitals",
+        "nav_delivery": "Delivery Room",
+        "nav_delivery_sub": "Emergency Retrieval Gateway",
+        "p1_eyebrow": "Agent 2 · Smart Ingestion",
+        "p1_title": "Upload report or enter data manually.",
+        "p1_desc": "Upload a photo of the medical report, and we will extract the data. Anything missing? You can fill the gaps below.",
+        "btn_ocr": "Upload ID/Report (OCR)",
+        "btn_manual": "Enter Manually",
+        "upload_hint": "Take a picture of the ID or browse for an image.",
+        "btn_process": "Process Document",
+        "btn_save": "Save Data",
+        "p2_eyebrow": "Agent 4 · Emergency Searcher",
+        "p2_title": "Emergency Retrieval Gateway",
+        "p2_desc": "Select an option below to securely pull the patient's medical history when they arrive at the delivery room.",
+        "tab_scan": "📷 Scan Card",
+        "tab_manual": "🔢 Manual ID",
+        "tab_demo": "🔍 Demographic Search",
+        "scan_hint": "Point camera to scan the physical Card.",
+        "btn_open_scan": "Open Camera Scanner",
+        "man_hint": "Enter the Patient ID manually.",
+        "btn_search": "Search Database",
+        "demo_hint": "Search by Patient Name and Village.",
+        "btn_search_rec": "Search Records",
+        "insight_head": "Agent 3 · AI Clinical Insights",
+        "chart_title": "42-Week Vitals Trend",
+        "footer": "Built for front-line health workers · JananiSetu"
+    },
+    "hi": {
+        "welcome_title": "यहाँ नए हैं? आइए 20-सेकंड में एक नज़र डालें।",
+        "welcome_desc": "दो पड़ाव, एक यात्रा: डेटा सुरक्षित रूप से दर्ज करने के लिए चेक-अप नंबर दर्ज करें, और अस्पताल पहुँचते ही डॉक्टरों को पूर्ण AI अंतर्दृष्टि और ट्रेंड ग्राफ़ के साथ एक तैयार ब्रीफिंग सौंपें।",
+        "welcome_btn": "समझ गया, शुरू करें",
+        "nav_village": "गांव चेक-इन",
+        "nav_village_sub": "आज के वाइटल्स दर्ज करें",
+        "nav_delivery": "डिलीवरी रूम",
+        "nav_delivery_sub": "आपातकालीन पुनर्प्राप्ति गेटवे",
+        "p1_eyebrow": "एजेंट 2 · स्मार्ट इनजेशन",
+        "p1_title": "रिपोर्ट अपलोड करें या मैन्युअल रूप से डेटा दर्ज करें।",
+        "p1_desc": "मेडिकल रिपोर्ट की एक तस्वीर अपलोड करें, और हम डेटा निकाल लेंगे। कुछ छूट गया? आप नीचे दिए गए रिक्त स्थान भर सकते हैं।",
+        "btn_ocr": "आईडी/रिपोर्ट अपलोड करें (OCR)",
+        "btn_manual": "मैन्युअल रूप से दर्ज करें",
+        "upload_hint": "आईडी की तस्वीर लें या छवि ब्राउज़ करें।",
+        "btn_process": "दस्तावेज़ प्रोसेस करें",
+        "btn_save": "डेटा सहेजें",
+        "p2_eyebrow": "एजेंट 4 · आपातकालीन खोजकर्ता",
+        "p2_title": "आपातकालीन पुनर्प्राप्ति गेटवे",
+        "p2_desc": "डिलीवरी रूम में पहुँचने पर मरीज का मेडिकल इतिहास सुरक्षित रूप से निकालने के लिए नीचे एक विकल्प चुनें।",
+        "tab_scan": "📷 कार्ड स्कैन करें",
+        "tab_manual": "🔢 मैन्युअल आईडी",
+        "tab_demo": "🔍 जनसांख्यिकीय खोज",
+        "scan_hint": "भौतिक कार्ड को स्कैन करने के लिए कैमरा पॉइंट करें।",
+        "btn_open_scan": "कैमरा स्कैनर खोलें",
+        "man_hint": "मरीज की आईडी मैन्युअल रूप से दर्ज करें।",
+        "btn_search": "डेटाबेस खोजें",
+        "demo_hint": "मरीज के नाम और गांव से खोजें।",
+        "btn_search_rec": "रिकॉर्ड खोजें",
+        "insight_head": "एजेंट 3 · एआई क्लिनिकल इनसाइट्स",
+        "chart_title": "42-सप्ताह वाइटल्स ट्रेंड",
+        "footer": "फ्रंट-लाइन स्वास्थ्य कार्यकर्ताओं के लिए निर्मित · जननीसेतु"
+    }
 };
+
+// --- LANGUAGE TOGGLE FUNCTION ---
+function toggleLang(lang, btnElement) {
+    // 1. Update the button styles visually
+    document.querySelectorAll('.lang-toggle button').forEach(btn => btn.classList.remove('active'));
+    if (btnElement) {
+        btnElement.classList.add('active');
+    }
+
+    // 2. Map through all HTML elements that have the data-translate attribute
+    document.querySelectorAll('[data-translate]').forEach(el => {
+        const key = el.getAttribute('data-translate');
+        if (translations[lang] && translations[lang][key]) {
+            el.innerText = translations[lang][key];
+        }
+    });
+}
 
 function toggleLang(lang, btn) {
     document.querySelectorAll('.lang-toggle button').forEach(b => b.classList.remove('active'));
