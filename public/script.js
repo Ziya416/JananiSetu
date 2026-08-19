@@ -71,9 +71,7 @@ const translations = {
     }
 };
 
-// ==========================================
-// 2. AUTHENTICATION & UI TOGGLES
-// ==========================================
+// AUTHENTICATION & UI TOGGLES
 function toggleAuthMode() {
     isSignupMode = !isSignupMode;
     document.getElementById('authTitle').innerText = isSignupMode ? "Sign Up for JananiSetu" : "Login to JananiSetu";
@@ -129,9 +127,7 @@ function handleAuth() {
     });
 }
 
-// ==========================================
-// 3. GLOBAL TRANSLATION
-// ==========================================
+// GLOBAL TRANSLATION
 function toggleLang(lang, btnElement) {
     document.querySelectorAll('.lang-toggle button').forEach(btn => btn.classList.remove('active'));
     if (btnElement) {
@@ -146,9 +142,7 @@ function toggleLang(lang, btnElement) {
     });
 }
 
-// ==========================================
-// 4. NAVIGATION & PANELS
-// ==========================================
+// NAVIGATION & PANELS
 function dismissWelcome() {
     document.getElementById('welcomeBanner').style.display = 'none';
 }
@@ -187,9 +181,7 @@ function showIdentityMethod(method, btn) {
     if(method === 'demo') document.getElementById('demoSearchZone').style.display = 'block';
 }
 
-// ==========================================
-// 5. DOCUMENT AI & SAVING (PANEL 1)
-// ==========================================
+// DOCUMENT AI & SAVING (PANEL 1)
 function handleImageSelect(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
@@ -271,9 +263,7 @@ function savePatientData() {
     });
 }
 
-// ==========================================
-// 6. SEARCH & AI INSIGHTS (PANEL 2)
-// ==========================================
+// SEARCH & AI INSIGHTS (PANEL 2)
 function searchByDemographics() {
     const name = document.getElementById('demo_name').value;
     const village = document.getElementById('demo_village').value;
