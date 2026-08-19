@@ -1,3 +1,5 @@
+# Genrating 60 Synthetic patient records of multiple timelines for demo case scenarios
+# The records are from patient ID MOM-2001 to MOM-2060
 import sqlite3
 import random
 from datetime import datetime, timedelta
