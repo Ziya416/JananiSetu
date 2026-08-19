@@ -35,7 +35,7 @@
             </div>
         </div>
 
-        <!-- Role Selection (Hidden during Login, visible during Signup) -->
+        <!-- Role Selection: visible during Signup -->
         <div class="field" id="roleSelection" style="display: none; text-align: left; margin-bottom: 15px;">
             <label style="font-size: 13px; font-weight: 600; margin-bottom: 5px; display: block;">Select Facility Level</label>
             <select id="authRole">
@@ -47,14 +47,12 @@
 
         <!-- Login / Action Button -->
         <button id="authActionBtn" style="width: 100%; padding: 13px 14px; border-radius: 12px; font-size: 15.5px; font-family: 'IBM Plex Mono', monospace; font-weight: 500; background: #000; color: #fff; border: none; margin-top: 15px; cursor: pointer;" onclick="handleAuth()">Login</button>
-        
-        <!-- Toggle Sign Up / Login Button -->
         <p class="auth-toggle-text" onclick="toggleAuthMode()" id="authToggleHint">Don't have an account? Sign up</p>
     </div>
 </div>
 
 <div class="app">
-    <!-- RESTORED TOP HEADER -->
+    <!-- TOP HEADER -->
     <header class="header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px;">
         <div class="brand" style="display:flex; align-items:center; gap:14px;">
             <div class="brand-mark" style="width:48px; height:48px;">
@@ -65,7 +63,7 @@
                 <p style="margin:2px 0 0; font-size:13px; color:var(--ink-soft); letter-spacing:0.3px;">A Bridge between Hope to Life</p>
             </div>
         </div>
-        <!-- Language Toggle managed purely by your CSS -->
+        <!-- Language Toggle managed purely by css -->
         <div class="lang-toggle">
             <button class="active" onclick="toggleLang('en', this)">ENG</button>
             <button onclick="toggleLang('hi', this)">HINDI</button>
@@ -239,7 +237,6 @@
 
     <footer data-translate="footer">Built for front-line health workers · JananiSetu</footer>
 </div>
-
 <script src="script.js"></script>
 </body>
 </html>
