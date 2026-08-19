@@ -33,7 +33,7 @@ for i in range(1, 61):  # Generate 60 patients
     husband = random.choice(husbands)
     village = random.choice(villages)
     
-    # Generate realistic pregnancy timelines
+    # Generate realistic pregnancy timelines with use of random and datetime
     lmp_date = datetime(2025, random.randint(1, 10), random.randint(1, 28))
     edd_date = lmp_date + timedelta(days=280)
     lmp = lmp_date.strftime("%d/%m/%Y")
@@ -41,7 +41,7 @@ for i in range(1, 61):  # Generate 60 patients
     
     obs_history = f"G{random.randint(1,3)} P{random.randint(0,2)} A{random.randint(0,1)} L{random.randint(0,2)}"
     
-    # INJECT REAL-WORLD EDGE CASES FOR THE AI TO CATCH
+    # Injecting real world edge cases 
     profile = random.choices(["Normal", "Preeclampsia", "GDM", "Anemia"], weights=[70, 10, 10, 10])[0]
     
     seizure = "none"
@@ -88,9 +88,10 @@ for i in range(1, 61):  # Generate 60 patients
         ''', (patient_id, name, husband, village, lmp, edd, obs_history, 
               week, bp_str, hb, sugar, seizure, hhh, notes))
 
+# Commiting changes and closing the data base connection
 conn.commit()
 conn.close()
-print("🔥 Successfully generated and injected simulated timelines for 60 patients!")
+print("🔥 Successfully generated and injected simulated timelines for 60 patients!") # Assurance
 
 
 
