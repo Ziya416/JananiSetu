@@ -60,10 +60,14 @@ a{ color:inherit; } button{ font-family:inherit; cursor:pointer; }
 .card{ background:var(--white); border-radius:var(--radius); padding:24px; box-shadow:var(--shadow); border:1px solid var(--line); }
 .field{ margin-bottom:18px; }
 .field label{ display:flex; align-items:center; gap:6px; font-size:13.5px; font-weight:700; color:var(--ink-soft); margin-bottom:7px; }
-input[type=text], input[type=number], input[type=file], select, textarea{ width:100%; padding:13px 14px; border-radius:12px; border:1.5px solid var(--line); font-size:15.5px; font-family:'IBM Plex Mono', monospace; font-weight:500; background:var(--cream); color:var(--ink); }
+input[type=text], input[type=number], input[type=password], input[type=file], select, textarea{ width:100%; padding:13px 14px; border-radius:12px; border:1.5px solid var(--line); font-size:15.5px; font-family:'IBM Plex Mono', monospace; font-weight:500; background:var(--cream); color:var(--ink); }
 input:focus{ outline:none; border-color:var(--marigold); background:var(--white); }
-.btn-primary{ width:100%; padding:15px; border:none; border-radius:14px; background:var(--ink); color:var(--white); font-weight:800; font-size:15px; display:flex; align-items:center; justify-content:center; gap:8px; transition:background .15s ease; cursor: pointer; }
-.btn-primary:hover{ background:#2A3E66; }
+
+.password-wrapper { position: relative; display: flex; align-items: center; }
+.password-wrapper input { padding-right: 40px; }
+.toggle-password { position: absolute; right: 10px; background: none; border: none; cursor: pointer; color: var(--ink-soft); padding: 5px; display: flex; align-items: center; justify-content: center; }
+.toggle-password:hover { color: var(--ink); }
+.auth-toggle-text { font-size: 13.5px; color: var(--ink-soft); margin-top: 15px; cursor: pointer; text-decoration: underline; text-align: center; }
 
 .lookup{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px; }
 .lookup button{ flex:1; padding:13px 22px; border:1px solid var(--line); border-radius:12px; background:var(--white); color:var(--ink); font-weight:800; font-size:14.5px; }
@@ -74,3 +78,28 @@ input:focus{ outline:none; border-color:var(--marigold); background:var(--white)
 .graph-grid canvas { width: 100%; max-height: 250px; border-radius: 12px; border: 1px solid var(--line); background: white; padding: 10px; }
 
 footer{ text-align:center; margin-top:50px; color:#A6ADBC; font-size:12.5px; }
+
+/* --- GLOBAL BUTTON STYLES --- */
+.btn-primary {
+    background: var(--ink, #000);
+    color: var(--white, #fff);
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-primary:hover {
+    background: #333;
+    transform: translateY(-1px);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
