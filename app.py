@@ -9,7 +9,7 @@ import base64
 from io import BytesIO
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# Use the NEW SDK to fix the warning
+
 from google import genai
 from google.genai import types
 
