@@ -2,7 +2,27 @@
 This is a maternal healthcare web application designed to provide crucial health tracking and resources. Built with Python and integrated with Google Cloud tools, the system ensures scalable and reliable access to maternal healthcare information.
 
 ## Tech Stack
-Python, Google Cloud Platform (GCP), Web Framework (e.g., Flask/FastAPI), HTML/CSS/JS.
+*Frontend*  
+HTML5, CSS3, JS  
+Chart.js (Dynamic vitals visualization)  
+JSON-based localization (English/Hindi toggle)  
+*Backend*  
+Python  
+FastAPI & Pydantic (v1 architecture)  
+Flask & Werkzeug (v2 architecture)  
+*Database*  
+Google Cloud Platform tools (v1)  
+SQLite (v2 local relational storage)  
+*AI & Data Architecture*  
+Google GenAI SDK (Gemini 2.5 Flash)  
+Retrieval-Augmented Generation (RAG) Pipeline  
+Document AI (Multimodal OCR for medical reports)  
+Custom Python data seeding scripts (datetime, randomized logic)  
+*DevOps & Deployment*  
+Render (PaaS deployment)  
+Gunicorn (WSGI server)  
+Git & GitHub  
+Python *unittest* & *unittest.mock* (Automated API and mock-AI testing)  
 
 ## How does this work?
 This project operates as a full-stack web application with cloud-backed services.
