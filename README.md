@@ -53,7 +53,7 @@ If you spun up any paid GCP resources for testing (like Cloud SQL or specific Cl
 
 ## Screenshots
 
-*Signups*
+*Signups*  
 <img width="948" height="470" alt="image" src="https://github.com/user-attachments/assets/a80bdb24-7546-42b0-9cdc-c92ac2e319a6" />
 
 *Login Page*
