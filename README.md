@@ -9,7 +9,9 @@ This project operates as a full-stack web application with cloud-backed services
 
  *Version 1 to Version 2 Improvements:*
 *Architecture Overhaul*: V2 features an updated, more robust architecture deployed entirely on Google Cloud, ensuring better scalability compared to the localized V1.
+
 *Live Deployment*: Transitioned from a local/development environment in V1 to a fully live production deployment in August 2026.
+
 *Enhanced Data Pipeline*: Improved integration with GCP tools for more secure and efficient handling of maternal health data.
 
 ## How do I run this?
