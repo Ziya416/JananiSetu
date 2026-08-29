@@ -10,34 +10,24 @@ This project operates as a full-stack web application with cloud-backed services
  *Version 1 to Version 2 Improvements:*
 
 *Architecture Overhaul*: V2 features an updated, more robust architecture deployed entirely on Google Cloud, ensuring better scalability compared to the localized V1.
-
 *Live Deployment*: Transitioned from a local/development environment in V1 to a fully live production deployment in August 2026.
-
 *Enhanced Data Pipeline*: Improved integration with GCP tools for more secure and efficient handling of maternal health data.
 
 ## How do I run this?
 You need to have Python and the Google Cloud CLI installed.
-
 Clone the repository and navigate into the project folder.
-
-Run python -m venv venv to create a virtual environment, then activate it (source venv/bin/activate on Mac/Linux or venv\Scripts\activate on Windows).
-
-Run pip install -r requirements.txt to install all necessary Python dependencies.
-
-Authenticate with Google Cloud by running gcloud auth application-default login.
-
-Run python app.py (or your specific start command) to launch the local development server.
-
-You can check the UI at http://localhost:5000.
+Run *python -m venv venv* to create a virtual environment, then activate it (*venv\Scripts\activate* on Windows).
+Run *pip install -r requirements.txt* to install all necessary Python dependencies.
+Authenticate with Google Cloud by running *gcloud auth application-default login*.
+Run *python app.py* (or your specific start command) to launch the local development server.
+You can check the UI at *http://localhost:5000*.
 
 ## Custom Usage & Interaction
-To test the cloud integration locally, ensure your GCP project ID is correctly set in your .env file.
-
-You can interact with the API endpoints directly using tools like Postman by hitting http://localhost:5000/api/v1/... to simulate data entry and retrieval.
+To test the cloud integration locally, ensure your GCP project ID is correctly set in your *.env* file.
+You can interact with the API endpoints directly using tools like Postman by hitting *http://localhost:5000/api/v1/...* to simulate data entry and retrieval.
 
 ## I am done experimenting with this project
-Run deactivate in your terminal to exit the Python virtual environment.
-
+Run *deactivate* in your terminal to exit the Python virtual environment.
 If you spun up any paid GCP resources for testing (like Cloud SQL or specific Cloud Run instances), make sure to spin them down via the GCP Console or CLI to avoid unexpected charges.
 
 ## Live Demo
