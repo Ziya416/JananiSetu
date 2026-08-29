@@ -7,7 +7,7 @@ Python, Google Cloud Platform (GCP), Web Framework (e.g., Flask/FastAPI), HTML/C
 ## How does this work?
 This project operates as a full-stack web application with cloud-backed services.
 
-# *Version 1 to Version 2 Improvements:*
+ *Version 1 to Version 2 Improvements:*
 
 *Architecture Overhaul*: V2 features an updated, more robust architecture deployed entirely on Google Cloud, ensuring better scalability compared to the localized V1.
 
