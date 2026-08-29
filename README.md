@@ -1,7 +1,8 @@
 ## JananiSetu
 This is a maternal healthcare web application designed to provide crucial health tracking and resources. Built with Python and integrated with Google Cloud tools, the system ensures scalable and reliable access to maternal healthcare information.
 
-## Tech Stack: Python, Google Cloud Platform (GCP), Web Framework (e.g., Flask/FastAPI), HTML/CSS/JS.
+## Tech Stack
+Python, Google Cloud Platform (GCP), Web Framework (e.g., Flask/FastAPI), HTML/CSS/JS.
 
 ## How does this work?
 This project operates as a full-stack web application with cloud-backed services.
