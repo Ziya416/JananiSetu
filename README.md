@@ -8,12 +8,13 @@ Chart.js (Dynamic vitals visualization)
 JSON-based localization (English/Hindi toggle)  
 • *Backend*  
 Python  
-FastAPI & Pydantic (v1 architecture)  
+Flask & BigQuery (v1 architecture)  
 Flask & Werkzeug (v2 architecture)  
 *Database*  
 Google Cloud Platform tools (v1)  
 SQLite (v2 local relational storage)  
 • *AI & Data Architecture*  
+Vertex AI (v1)
 Google GenAI SDK (Gemini 2.5 Flash)  
 Retrieval-Augmented Generation (RAG) Pipeline  
 Document AI (Multimodal OCR for medical reports)  
